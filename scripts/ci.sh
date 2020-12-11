@@ -40,7 +40,7 @@ findTestFiles () {
 }
 
 if [ "$1" = "misc" ]; then
-    npm run build -- --light
+    npm run build
 
     feedsFiles=$(findTestFiles server/tests/feeds)
     helperFiles=$(findTestFiles server/tests/helpers)
