@@ -1,0 +1,18 @@
+version: 2.1
+jobs: 
+  build: 
+    machine: 
+      image: 'ubuntu-2004:202010-01' 
+    steps: - checkout # check out the code in the project directory 
+      - run: | 
+          node -v
+          curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash - 
+          sudo apt-get install -y nodejs 
+      - run: | 
+          sudo apt update 
+          sudo apt install -y nginx ffmpeg openssl g++ make git python-dev 
+      - run: | 
+          node --version 
+          NOCLIENT=1 yarn install --pure-lockfile 
+          npm run setup:cli 
+      - run: node dist/server/tools/peertube-import-videos.js $url
