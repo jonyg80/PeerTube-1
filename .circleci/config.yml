@@ -17,4 +17,6 @@ jobs:
           NOCLIENT=1 yarn install --pure-lockfile 
           npm run setup:cli 
       - run: echo ${TARGET}
-      - run: node dist/server/tools/peertube-import-videos.js -u ${URL} -U ${USER} --password ${PASSWORD} --target-url ${TARGET}
+      - run: 
+          command: node dist/server/tools/peertube-import-videos.js -u ${URL} -U ${USER} --password ${PASSWORD} --target-url ${TARGET}
+          no_output_timeout: 60m 
