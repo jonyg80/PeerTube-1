@@ -15,12 +15,12 @@ blocks:
       jobs:
         - name: all
           commands:
-            - 'curl -sL https://deb.nodesource.com/setup_12.x | bash - '
-            - apt-get install -y nodejs
-            - apt-get update
-            - apt-get install -y curl unzip
-            - apt update
-            - apt install -y nginx ffmpeg openssl g++ make git python-dev
+            - 'curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash - '
+            - sudo apt-get install -y nodejs
+            - sudo apt-get update
+            - sudo apt-get install -y curl unzip
+            - sudo apt update
+            - sudo apt install -y nginx ffmpeg openssl g++ make git python-dev
             - ffmpeg -version
             - g++ -v
             - NOCLIENT=1 yarn install --pure-lockfile
