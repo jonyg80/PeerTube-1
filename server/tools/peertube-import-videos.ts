@@ -72,7 +72,7 @@ async function run (url: string, user: UserInfo) {
 
   const youtubeDL = await safeGetYoutubeDL()
 
-  const options = [ '-j', '--flat-playlist', '--playlist-reverse', ...command.args ]
+  const options = [ '-j', '--flat-playlist', ...command.args ]
 
   youtubeDL.getInfo(program['targetUrl'], options, processOptions, async (err, info) => {
     if (err) {
