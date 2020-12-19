@@ -135,7 +135,7 @@ describe('Test stats (excluding redundancy)', function () {
   })
 
   it('Should correctly count video file sizes if transcoding is enabled', async function () {
-    this.timeout(20000)
+    this.timeout(60000)
 
     await updateCustomSubConfig(servers[0].url, servers[0].accessToken, {
       transcoding: {
@@ -174,6 +174,38 @@ describe('Test stats (excluding redundancy)', function () {
       expect(data.totalLocalVideoFilesSize).to.be.greaterThan(300000)
       expect(data.totalLocalVideoFilesSize).to.be.lessThan(400000)
     }
+  })
+
+  it('Should have the correct AP stats', async function () {
+    this.timeout(60000)
+
+    await updateCustomSubConfig(servers[0].url, servers[0].accessToken, {
+      transcoding: {
+        enabled: false
+      }
+    })
+
+    const res1 = await getStats(servers[1].url)
+    const first = res1.body as ServerStats
+
+    for (let i = 0; i < 10; i++) {
+      await uploadVideo(servers[0].url, servers[0].accessToken, { name: 'video' })
+    }
+
+    await waitJobs(servers)
+
+    const res2 = await getStats(servers[1].url)
+    const second: ServerStats = res2.body
+
+    expect(second.totalActivityPubMessagesProcessed).to.be.greaterThan(first.totalActivityPubMessagesProcessed)
+
+    await wait(5000)
+
+    const res3 = await getStats(servers[1].url)
+    const third: ServerStats = res3.body
+
+    expect(third.totalActivityPubMessagesWaiting).to.equal(0)
+    expect(third.activityPubMessagesProcessedPerSecond).to.be.lessThan(second.activityPubMessagesProcessedPerSecond)
   })
 
   after(async function () {

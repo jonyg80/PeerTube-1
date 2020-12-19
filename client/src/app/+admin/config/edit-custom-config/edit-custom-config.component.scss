@@ -18,7 +18,8 @@ input[type=text] {
 }
 
 input[type=number] {
-  @include peertube-input-text(315px);
+  @include peertube-input-text($form-base-input-width);
+
   display: block;
 }
 
@@ -41,8 +42,11 @@ input[type=checkbox] {
   @include peertube-select-container($form-base-input-width);
 }
 
+ng-select,
 my-select-checkbox {
-  @include ng-select($form-base-input-width);
+  @include responsive-width($form-base-input-width);
+
+  display: block;
 }
 
 input[type=submit] {
@@ -102,4 +106,24 @@ ngb-tabset:not(.previews) ::ng-deep {
 .alert-signup {
   width: fit-content;
   margin-top: 10px;
+}
+
+.callout-container {
+  position: absolute;
+  display: flex;
+  height: 0;
+  width: 100%;
+  justify-content: right;
+
+  .callout-link {
+    @include peertube-button-link;
+
+    position: relative;
+    right: 3.3em;
+    top: .3em;
+    font-size: 90%;
+    color: pvar(--mainColor);
+    background-color: pvar(--mainBackgroundColor);
+    padding: 0 .3em;
+  }
 }

@@ -98,7 +98,7 @@ export class EditCustomConfigComponent extends FormReactive implements OnInit, A
     ]
 
     this.liveMaxDurationOptions = [
-      { value: null, label: $localize`No limit` },
+      { value: -1, label: $localize`No limit` },
       { value: 1000 * 3600, label: $localize`1 hour` },
       { value: 1000 * 3600 * 3, label: $localize`3 hours` },
       { value: 1000 * 3600 * 5, label: $localize`5 hours` },
@@ -117,6 +117,30 @@ export class EditCustomConfigComponent extends FormReactive implements OnInit, A
   get availableThemes () {
     return this.serverConfig.theme.registered
       .map(t => t.name)
+  }
+
+  getTotalTranscodingThreads () {
+    const transcodingEnabled = this.form.value['transcoding']['enabled']
+    const transcodingThreads = this.form.value['transcoding']['threads']
+    const liveTranscodingEnabled = this.form.value['live']['transcoding']['enabled']
+    const liveTranscodingThreads = this.form.value['live']['transcoding']['threads']
+
+    // checks whether all enabled method are on fixed values and not on auto (= 0)
+    let noneOnAuto = !transcodingEnabled || +transcodingThreads > 0
+    noneOnAuto &&= !liveTranscodingEnabled || +liveTranscodingThreads > 0
+
+    // count total of fixed value, repalcing auto by a single thread (knowing it will display "at least")
+    let value = 0
+    if (transcodingEnabled) value += +transcodingThreads || 1
+    if (liveTranscodingEnabled) value += +liveTranscodingThreads || 1
+
+    return {
+      value,
+      atMost: noneOnAuto, // auto switches everything to a least estimation since ffmpeg will take as many threads as possible
+      unit: value > 1
+        ? $localize`threads`
+        : $localize`thread`
+    }
   }
 
   getResolutionKey (resolution: string) {
@@ -334,10 +358,6 @@ export class EditCustomConfigComponent extends FormReactive implements OnInit, A
 
   async formValidated () {
     const value: CustomConfig = this.form.getRawValue()
-
-    // Transform "null" to null
-    const maxDuration = value.live.maxDuration as any
-    if (maxDuration === 'null') value.live.maxDuration = null
 
     this.configService.updateCustomConfig(value)
       .subscribe(
