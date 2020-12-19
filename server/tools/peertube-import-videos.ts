@@ -404,7 +404,7 @@ function exitError (message: string, ...meta: any[]) {
 
 function getYoutubeDLInfo (youtubeDL: any, url: string, args: string[]) {
   return new Promise<any>((res, rej) => {
-    const options = [ '-j', '--flat-playlist', '-i', '--geo-bypass', '-v', ...args ]
+    const options = [ '-j', '--flat-playlist', '-i', '--playlist-random', ...args ]
 
     youtubeDL.getInfo(url, options, processOptions, async (err, info) => {
       if (err) return rej(err)
