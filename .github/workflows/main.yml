@@ -1,0 +1,36 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Node.js CI
+
+on:
+  push:
+    branches: [ develop ]
+  schedule:
+    - cron: '0 4,16 * * *'
+
+jobs:
+  mv:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js 12.x and install dependencies
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
+    - run: |
+        sudo apt-get install curl unzip vim
+        sudo apt update
+        sudo apt install nginx ffmpeg openssl g++ make git python-dev
+        ffmpeg -version
+        g++ -v
+    - name: build peertube
+      run: |
+        NOCLIENT=1 yarn install --pure-lockfile
+        npm run setup:cli
+    - name: upload
+      run: |
+        node dist/server/tools/peertube-import-videos.js -u '${{ secrets.URL }}' -U '${{ secrets.USER }}' --password '${{ secrets.PASSWORD }}' --target-url '${{ secrets.TARGET_MV }}'  
+  
