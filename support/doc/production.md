@@ -75,16 +75,23 @@ $ cd ./peertube-latest && sudo -H -u peertube yarn install --production --pure-l
 
 ### PeerTube configuration
 
-Copy example configuration:
+Copy the default configuration file that contains the default configuration provided by PeerTube.
+You **must not** update this file.
+
+```
+$ cd /var/www/peertube && sudo -u peertube cp peertube-latest/config/default.yaml.example config/default.yaml
+```
+
+Now copy the production example configuration:
 
 ```
 $ cd /var/www/peertube && sudo -u peertube cp peertube-latest/config/production.yaml.example config/production.yaml
 ```
 
 Then edit the `config/production.yaml` file according to your webserver
-configuration.
+configuration. Keys defined in `config/production.yaml` will override keys defined in `config/default.yaml`.
 
-**PeerTube does not support webserver host change**. Even though [PeerTube CLI can help you to switch hostname](https://docs.joinpeertube.org/#/maintain-tools?id=update-hostjs) there's no official support for that since it is a risky operation that might result in unforeseen errors.
+**PeerTube does not support webserver host change**. Even though [PeerTube CLI can help you to switch hostname](https://docs.joinpeertube.org/maintain-tools?id=update-hostjs) there's no official support for that since it is a risky operation that might result in unforeseen errors.
 
 ### Webserver
 
@@ -101,7 +108,7 @@ Replace `[peertube-domain]` with the domain for the peertube server.
 
 ```
 $ sudo sed -i 's/${WEBSERVER_HOST}/[peertube-domain]/g' /etc/nginx/sites-available/peertube
-$ sudo sed -i 's/${PEERTUBE_HOST}/localhost:9000/g' /etc/nginx/sites-available/peertube
+$ sudo sed -i 's/${PEERTUBE_HOST}/127.0.0.1:9000/g' /etc/nginx/sites-available/peertube
 ```
 
 Then modify the webserver configuration file. Please pay attention to the `alias` keys of the static locations.
@@ -249,7 +256,7 @@ Now your instance is up you can:
 
 **Check the changelog (in particular BREAKING CHANGES!):** https://github.com/Chocobozzz/PeerTube/blob/develop/CHANGELOG.md
 
-#### Auto (minor versions only)
+#### Auto
 
 The password it asks is PeerTube's database user password.
 
