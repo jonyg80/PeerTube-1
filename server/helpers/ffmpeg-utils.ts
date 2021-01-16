@@ -312,22 +312,6 @@ function buildStreamSuffix (base: string, streamNum?: number) {
 }
 
 // ---------------------------------------------------------------------------
-
-export {
-  getLiveTranscodingCommand,
-  getLiveMuxingCommand,
-  buildStreamSuffix,
-  convertWebPToJPG,
-  processGIF,
-  generateImageFromVideoFile,
-  TranscodeOptions,
-  TranscodeOptionsType,
-  transcode
-}
-
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
 // Default options
 // ---------------------------------------------------------------------------
 
@@ -610,7 +594,10 @@ function presetOnlyAudio (command: ffmpeg.FfmpegCommand): ffmpeg.FfmpegCommand {
 
 function getFFmpeg (input: string, type: 'live' | 'vod') {
   // We set cwd explicitly because ffmpeg appears to create temporary files when trancoding which fails in read-only file systems
-  const command = ffmpeg(input, { niceness: FFMPEG_NICE.TRANSCODING, cwd: CONFIG.STORAGE.TMP_DIR })
+  const command = ffmpeg(input, {
+    niceness: type === 'live' ? FFMPEG_NICE.LIVE : FFMPEG_NICE.VOD,
+    cwd: CONFIG.STORAGE.TMP_DIR
+  })
 
   const threads = type === 'live'
     ? CONFIG.LIVE.TRANSCODING.THREADS
@@ -633,7 +620,9 @@ async function runCommand (command: ffmpeg.FfmpegCommand, onEnd?: Function) {
       rej(err)
     })
 
-    command.on('end', () => {
+    command.on('end', (stdout, stderr) => {
+      logger.debug('FFmpeg command ended.', { stdout, stderr })
+
       if (onEnd) onEnd()
 
       res()
@@ -641,4 +630,22 @@ async function runCommand (command: ffmpeg.FfmpegCommand, onEnd?: Function) {
 
     command.run()
   })
+}
+
+// ---------------------------------------------------------------------------
+
+export {
+  getLiveTranscodingCommand,
+  getLiveMuxingCommand,
+  buildStreamSuffix,
+  convertWebPToJPG,
+  processGIF,
+  generateImageFromVideoFile,
+  TranscodeOptions,
+  TranscodeOptionsType,
+  transcode,
+  runCommand,
+
+  // builders
+  buildx264VODCommand
 }
