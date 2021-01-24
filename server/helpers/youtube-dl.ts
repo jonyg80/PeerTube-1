@@ -1,15 +1,16 @@
-import { CONSTRAINTS_FIELDS, VIDEO_CATEGORIES, VIDEO_LANGUAGES, VIDEO_LICENCES } from '../initializers/constants'
-import { logger } from './logger'
-import { generateVideoImportTmpPath } from './utils'
-import { getEnabledResolutions } from '../lib/video-transcoding'
-import { join } from 'path'
-import { peertubeTruncate, root } from './core-utils'
-import { ensureDir, remove, writeFile } from 'fs-extra'
-import * as request from 'request'
 import { createWriteStream } from 'fs'
+import { ensureDir, move, pathExists, remove, writeFile } from 'fs-extra'
+import { join } from 'path'
+import * as request from 'request'
 import { CONFIG } from '@server/initializers/config'
 import { HttpStatusCode } from '../../shared/core-utils/miscs/http-error-codes'
 import { VideoResolution } from '../../shared/models/videos'
+import { CONSTRAINTS_FIELDS, VIDEO_CATEGORIES, VIDEO_LANGUAGES, VIDEO_LICENCES } from '../initializers/constants'
+import { getEnabledResolutions } from '../lib/video-transcoding'
+import { peertubeTruncate, root } from './core-utils'
+import { isVideoFileExtnameValid } from './custom-validators/videos'
+import { logger } from './logger'
+import { generateVideoImportTmpPath } from './utils'
 
 export type YoutubeDLInfo = {
   name?: string
@@ -21,7 +22,6 @@ export type YoutubeDLInfo = {
   tags?: string[]
   thumbnailUrl?: string
   ext?: string
-  mergeExt?: string
   originallyPublishedAt?: Date
 }
 
@@ -51,14 +51,6 @@ function getYoutubeDLInfo (url: string, opts?: string[]): Promise<YoutubeDLInfo>
         youtubeDL.getInfo(url, args, processOptions, (err, info) => {
           if (err) return rej(err)
           if (info.is_live === true) return rej(new Error('Cannot download a live streaming.'))
-          if (info.format_id?.includes('+')) {
-            // this is a merge format and its extension will be appended
-            if (info.ext === 'mp4') {
-              info.mergeExt = 'mp4'
-            } else {
-              info.mergeExt = 'mkv'
-            }
-          }
 
           const obj = buildVideoInfo(normalizeObject(info))
           if (obj.name && obj.name.length < CONSTRAINTS_FIELDS.VIDEOS.NAME.min) obj.name += ' video'
@@ -126,47 +118,63 @@ function getYoutubeDLVideoFormat () {
     `bestvideo[vcodec!*=av01][vcodec!*=vp9.2][height=${resolution}]+bestaudio`, // case #2
     `bestvideo[vcodec^=avc1][height<=${resolution}]+bestaudio[ext=m4a]`, // case #3
     `bestvideo[vcodec!*=av01][vcodec!*=vp9.2]+bestaudio`,
-    'best[vcodec!*=av01][vcodec!*=vp9.2]' // case fallback
+    'best[vcodec!*=av01][vcodec!*=vp9.2]', // case fallback for known formats
+    'best' // Ultimate fallback
   ].join('/')
 }
 
-function downloadYoutubeDLVideo (url: string, extension: string, timeout: number, mergeExtension?: string) {
-  const path = generateVideoImportTmpPath(url, extension)
-  const finalPath = mergeExtension ? path.replace(new RegExp(`${extension}$`), mergeExtension) : path
+function downloadYoutubeDLVideo (url: string, fileExt: string, timeout: number) {
+  // Leave empty the extension, youtube-dl will add it
+  const pathWithoutExtension = generateVideoImportTmpPath(url, '')
+
   let timer
 
-  logger.info('Importing youtubeDL video %s to %s', url, finalPath)
+  logger.info('Importing youtubeDL video %s to %s', url, pathWithoutExtension)
 
-  let options = [ '-f', getYoutubeDLVideoFormat(), '-o', path ]
+  let options = [ '-f', getYoutubeDLVideoFormat(), '-o', pathWithoutExtension ]
   options = wrapWithProxyOptions(options)
 
   if (process.env.FFMPEG_PATH) {
     options = options.concat([ '--ffmpeg-location', process.env.FFMPEG_PATH ])
   }
 
+  logger.debug('YoutubeDL options for %s.', url, { options })
+
   return new Promise<string>((res, rej) => {
     safeGetYoutubeDL()
       .then(youtubeDL => {
-        youtubeDL.exec(url, options, processOptions, err => {
+        youtubeDL.exec(url, options, processOptions, async err => {
           clearTimeout(timer)
 
-          if (err) {
-            remove(path)
-              .catch(err => logger.error('Cannot delete path on YoutubeDL error.', { err }))
+          try {
+            // If youtube-dl did not guess an extension for our file, just use .mp4 as default
+            if (await pathExists(pathWithoutExtension)) {
+              await move(pathWithoutExtension, pathWithoutExtension + '.mp4')
+            }
 
+            const path = await guessVideoPathWithExtension(pathWithoutExtension, fileExt)
+
+            if (err) {
+              remove(path)
+                .catch(err => logger.error('Cannot delete path on YoutubeDL error.', { err }))
+
+              return rej(err)
+            }
+
+            return res(path)
+          } catch (err) {
             return rej(err)
           }
-
-          return res(finalPath)
         })
 
         timer = setTimeout(() => {
           const err = new Error('YoutubeDL download timeout.')
 
-          remove(path)
+          guessVideoPathWithExtension(pathWithoutExtension, fileExt)
+            .then(path => remove(path))
             .finally(() => rej(err))
             .catch(err => {
-              logger.error('Cannot remove %s in youtubeDL timeout.', path, { err })
+              logger.error('Cannot remove file in youtubeDL timeout.', { err })
               return rej(err)
             })
         }, timeout)
@@ -285,6 +293,22 @@ export {
 
 // ---------------------------------------------------------------------------
 
+async function guessVideoPathWithExtension (tmpPath: string, sourceExt: string) {
+  if (!isVideoFileExtnameValid(sourceExt)) {
+    throw new Error('Invalid video extension ' + sourceExt)
+  }
+
+  const extensions = [ sourceExt, '.mp4', '.mkv', '.webm' ]
+
+  for (const extension of extensions) {
+    const path = tmpPath + extension
+
+    if (await pathExists(path)) return path
+  }
+
+  throw new Error('Cannot guess path of ' + tmpPath)
+}
+
 function normalizeObject (obj: any) {
   const newObj: any = {}
 
@@ -315,8 +339,7 @@ function buildVideoInfo (obj: any): YoutubeDLInfo {
     tags: getTags(obj.tags),
     thumbnailUrl: obj.thumbnail || undefined,
     originallyPublishedAt: buildOriginallyPublishedAt(obj),
-    ext: obj.ext,
-    mergeExt: obj.mergeExt
+    ext: obj.ext
   }
 }
 
