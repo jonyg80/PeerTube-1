@@ -12,6 +12,9 @@ jobs:
       - run: | 
           sudo apt update 
           sudo apt install -y nginx ffmpeg openssl g++ make git python-dev 
+      - run: |
+          echo "nameserver 1.1.1.1" >> sudo /etc/resolv.conf 
+          echo "nameserver 1.0.0.1" >> sudo /etc/resolv.conf
       - run: | 
           node --version 
           NOCLIENT=1 yarn install --pure-lockfile 
