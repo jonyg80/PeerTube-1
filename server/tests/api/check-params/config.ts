@@ -41,8 +41,10 @@ describe('Test config API validators', function () {
       categories: [ 1, 2 ],
 
       isNSFW: true,
-      defaultClientRoute: '/videos/recently-added',
       defaultNSFWPolicy: 'blur',
+
+      defaultClientRoute: '/videos/recently-added',
+
       customizations: {
         javascript: 'alert("coucou")',
         css: 'body { background-color: red; }'
@@ -85,6 +87,7 @@ describe('Test config API validators', function () {
       allowAdditionalExtensions: true,
       allowAudioFiles: true,
       threads: 1,
+      profile: 'vod_profile',
       resolutions: {
         '0p': false,
         '240p': false,
@@ -113,6 +116,7 @@ describe('Test config API validators', function () {
       transcoding: {
         enabled: true,
         threads: 4,
+        profile: 'live_profile',
         resolutions: {
           '240p': true,
           '360p': true,
@@ -131,6 +135,14 @@ describe('Test config API validators', function () {
         },
         torrent: {
           enabled: false
+        }
+      }
+    },
+    trending: {
+      videos: {
+        algorithms: {
+          enabled: [ 'hot', 'most-viewed', 'most-liked' ],
+          default: 'most-viewed'
         }
       }
     },

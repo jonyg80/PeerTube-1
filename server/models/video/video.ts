@@ -96,10 +96,11 @@ import {
   MVideoWithRights
 } from '../../types/models'
 import { MThumbnail } from '../../types/models/video/thumbnail'
-import { MVideoFile, MVideoFileRedundanciesOpt, MVideoFileStreamingPlaylistVideo } from '../../types/models/video/video-file'
+import { MVideoFile, MVideoFileStreamingPlaylistVideo } from '../../types/models/video/video-file'
 import { VideoAbuseModel } from '../abuse/video-abuse'
 import { AccountModel } from '../account/account'
 import { AccountVideoRateModel } from '../account/account-video-rate'
+import { UserModel } from '../account/user'
 import { UserVideoHistoryModel } from '../account/user-video-history'
 import { ActorModel } from '../activitypub/actor'
 import { AvatarModel } from '../avatar/avatar'
@@ -150,8 +151,6 @@ export type ForAPIOptions = {
   ids?: number[]
 
   videoPlaylistId?: number
-
-  withFiles?: boolean
 
   withAccountBlockerIds?: number[]
 }
@@ -217,13 +216,6 @@ export type AvailableForListIDsOptions = {
           [Op.in]: options.ids
         }
       }
-    }
-
-    if (options.withFiles === true) {
-      include.push({
-        model: VideoFileModel,
-        required: true
-      })
     }
 
     if (options.videoPlaylistId) {
@@ -1098,6 +1090,7 @@ export class VideoModel extends Model {
     const trendingDays = options.sort.endsWith('trending')
       ? CONFIG.TRENDING.VIDEOS.INTERVAL_DAYS
       : undefined
+    const hot = options.sort.endsWith('hot')
 
     const serverActor = await getServerActor()
 
@@ -1127,6 +1120,7 @@ export class VideoModel extends Model {
       user: options.user,
       historyOfUser: options.historyOfUser,
       trendingDays,
+      hot,
       search: options.search
     }
 
@@ -1196,6 +1190,39 @@ export class VideoModel extends Model {
     }
 
     return VideoModel.count(options)
+  }
+
+  static countVideosUploadedByUserSince (userId: number, since: Date) {
+    const options = {
+      include: [
+        {
+          model: VideoChannelModel.unscoped(),
+          required: true,
+          include: [
+            {
+              model: AccountModel.unscoped(),
+              required: true,
+              include: [
+                {
+                  model: UserModel.unscoped(),
+                  required: true,
+                  where: {
+                    id: userId
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      where: {
+        createdAt: {
+          [Op.gte]: since
+        }
+      }
+    }
+
+    return VideoModel.unscoped().count(options)
   }
 
   static countLivesOfAccount (accountId: number) {
@@ -1588,8 +1615,19 @@ export class VideoModel extends Model {
     const avatarKeys = [ 'id', 'filename', 'fileUrl', 'onDisk', 'createdAt', 'updatedAt' ]
     const actorKeys = [ 'id', 'preferredUsername', 'url', 'serverId', 'avatarId' ]
     const serverKeys = [ 'id', 'host' ]
-    const videoFileKeys = [ 'id', 'createdAt', 'updatedAt', 'resolution', 'size', 'extname', 'infoHash', 'fps', 'videoId' ]
-    const videoStreamingPlaylistKeys = [ 'id' ]
+    const videoFileKeys = [
+      'id',
+      'createdAt',
+      'updatedAt',
+      'resolution',
+      'size',
+      'extname',
+      'infoHash',
+      'fps',
+      'videoId',
+      'videoStreamingPlaylistId'
+    ]
+    const videoStreamingPlaylistKeys = [ 'id', 'type', 'playlistUrl' ]
     const videoKeys = [
       'id',
       'uuid',
@@ -1770,6 +1808,10 @@ export class VideoModel extends Model {
     return Object.assign(file, { Video: this })
   }
 
+  hasWebTorrentFiles () {
+    return Array.isArray(this.VideoFiles) === true && this.VideoFiles.length !== 0
+  }
+
   async addAndSaveThumbnail (thumbnail: MThumbnail, transaction: Transaction) {
     thumbnail.videoId = this.id
 
@@ -1844,17 +1886,21 @@ export class VideoModel extends Model {
 
   getFormattedVideoFilesJSON (): VideoFile[] {
     const { baseUrlHttp, baseUrlWs } = this.getBaseUrls()
-    let files: MVideoFileRedundanciesOpt[] = []
+    let files: VideoFile[] = []
 
     if (Array.isArray(this.VideoFiles)) {
-      files = files.concat(this.VideoFiles)
+      const result = videoFilesModelToFormattedJSON(this, baseUrlHttp, baseUrlWs, this.VideoFiles)
+      files = files.concat(result)
     }
 
     for (const p of (this.VideoStreamingPlaylists || [])) {
-      files = files.concat(p.VideoFiles || [])
+      p.Video = this
+
+      const result = videoFilesModelToFormattedJSON(p, baseUrlHttp, baseUrlWs, p.VideoFiles)
+      files = files.concat(result)
     }
 
-    return videoFilesModelToFormattedJSON(this, baseUrlHttp, baseUrlWs, files)
+    return files
   }
 
   toActivityPubObject (this: MVideoAP): VideoObject {

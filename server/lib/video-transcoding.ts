@@ -14,7 +14,7 @@ import { VideoFileModel } from '../models/video/video-file'
 import { VideoStreamingPlaylistModel } from '../models/video/video-streaming-playlist'
 import { updateMasterHLSPlaylist, updateSha256VODSegments } from './hls'
 import { generateVideoStreamingPlaylistName, getVideoFilename, getVideoFilePath } from './video-paths'
-import { availableEncoders } from './video-transcoding-profiles'
+import { VideoTranscodingProfilesManager } from './video-transcoding-profiles'
 
 /**
  *
@@ -41,8 +41,8 @@ async function optimizeOriginalVideofile (video: MVideoWithFile, inputVideoFile:
     inputPath: videoInputPath,
     outputPath: videoTranscodedPath,
 
-    availableEncoders,
-    profile: 'default',
+    availableEncoders: VideoTranscodingProfilesManager.Instance.getAvailableEncoders(),
+    profile: CONFIG.TRANSCODING.PROFILE,
 
     resolution: inputVideoFile.resolution,
 
@@ -95,8 +95,8 @@ async function transcodeNewWebTorrentResolution (video: MVideoWithFile, resoluti
       inputPath: videoInputPath,
       outputPath: videoTranscodedPath,
 
-      availableEncoders,
-      profile: 'default',
+      availableEncoders: VideoTranscodingProfilesManager.Instance.getAvailableEncoders(),
+      profile: CONFIG.TRANSCODING.PROFILE,
 
       resolution,
 
@@ -107,8 +107,8 @@ async function transcodeNewWebTorrentResolution (video: MVideoWithFile, resoluti
       inputPath: videoInputPath,
       outputPath: videoTranscodedPath,
 
-      availableEncoders,
-      profile: 'default',
+      availableEncoders: VideoTranscodingProfilesManager.Instance.getAvailableEncoders(),
+      profile: CONFIG.TRANSCODING.PROFILE,
 
       resolution,
       isPortraitMode: isPortrait,
@@ -142,8 +142,8 @@ async function mergeAudioVideofile (video: MVideoWithAllFiles, resolution: Video
     inputPath: tmpPreviewPath,
     outputPath: videoTranscodedPath,
 
-    availableEncoders,
-    profile: 'default',
+    availableEncoders: VideoTranscodingProfilesManager.Instance.getAvailableEncoders(),
+    profile: CONFIG.TRANSCODING.PROFILE,
 
     audioPath: audioInputPath,
     resolution,
@@ -283,8 +283,8 @@ async function generateHlsPlaylistCommon (options: {
     inputPath,
     outputPath,
 
-    availableEncoders,
-    profile: 'default',
+    availableEncoders: VideoTranscodingProfilesManager.Instance.getAvailableEncoders(),
+    profile: CONFIG.TRANSCODING.PROFILE,
 
     resolution,
     copyCodecs,

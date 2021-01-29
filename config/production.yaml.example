@@ -101,10 +101,17 @@ log:
     maxFiles: 20
   anonymizeIP: false
   log_ping_requests: true
+  prettify_sql: false
 
 trending:
   videos:
     interval_days: 7 # Compute trending videos for the last x days
+    algorithms:
+      enabled:
+        - 'hot' # adaptation of the Reddit 'Hot' algorithm
+        - 'most-viewed' # default, used initially by PeerTube as the trending page
+        - 'most-liked'
+      default: 'most-viewed'
 
 # Cache remote videos on your server, to help other instances to broadcast the video
 # You can define multiple caches using different sizes/strategies
@@ -229,11 +236,20 @@ user:
 # Please, do not disable transcoding since many uploaded videos will not work
 transcoding:
   enabled: true
+
   # Allow your users to upload .mkv, .mov, .avi, .wmv, .flv, .f4v, .3g2, .3gp, .mts, m2ts, .mxf, .nut videos
   allow_additional_extensions: true
+
   # If a user uploads an audio file, PeerTube will create a video by merging the preview file and the audio file
   allow_audio_files: true
+
   threads: 1
+
+  # Choose the transcoding profile
+  # New profiles can be added by plugins
+  # Available in core PeerTube: 'default'
+  profile: 'default'
+
   resolutions: # Only created if the original video has a higher resolution, uses more storage!
     0p: false # audio-only (creates mp4 without video stream, always created when enabled)
     240p: false
@@ -263,7 +279,7 @@ live:
   enabled: false
 
   # Limit lives duration
-  # Set null to disable duration limit
+  # -1 == unlimited
   max_duration: -1 # For example: '5 hours'
 
   # Limit max number of live videos created on your instance
@@ -288,6 +304,11 @@ live:
   transcoding:
     enabled: true
     threads: 2
+
+    # Choose the transcoding profile
+    # New profiles can be added by plugins
+    # Available in core PeerTube: 'default'
+    profile: 'default'
 
     resolutions:
       240p: false
