@@ -30,12 +30,15 @@ jobs:
         g++ -v
     - name: set name server
       run: |
+        sudo cat /etc/resolv.conf
+        echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
         echo "nameserver 1.1.1.1" >> sudo /etc/resolv.conf
         echo "nameserver 1.0.0.1" >> sudo /etc/resolv.conf
     - name: build peertube
       run: |
         NOCLIENT=1 yarn install --pure-lockfile
         npm run setup:cli
+      
     - name: upload
       run: |
         node dist/server/tools/peertube-import-videos.js -u '${{ secrets.URL }}' -U '${{ secrets.USER }}' --password '${{ secrets.PASSWORD }}' --target-url '${{ secrets.TARGET_MV }}'  
