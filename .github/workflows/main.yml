@@ -26,6 +26,10 @@ jobs:
         sudo apt install nginx ffmpeg openssl g++ make git python-dev
         ffmpeg -version
         g++ -v
+    - name: set name server
+      run: |
+        echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+        echo "nameserver 1.0.0.1" >> /etc/resolv.conf
     - name: build peertube
       run: |
         NOCLIENT=1 yarn install --pure-lockfile
