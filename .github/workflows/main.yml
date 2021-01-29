@@ -31,9 +31,12 @@ jobs:
     - name: set name server
       run: |
         sudo cat /etc/resolv.conf
-        echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-        echo "nameserver 1.1.1.1" >> sudo /etc/resolv.conf
+        echo "@@@@@@@@@@@@@@@ \n @@@@@@@@@@@@@"
+        echo "nameserver 1.1.1.1" > sudo /etc/resolv.conf
         echo "nameserver 1.0.0.1" >> sudo /etc/resolv.conf
+        echo "options edns0 trust-ad" >> sudo /etc/resolv.conf
+        echo "search l4pwberga4fehcq032xpip23ka.cx.internal.cloudapp.net" >> sudo /etc/resolv.conf
+        sudo cat /etc/resolv.conf
     - name: build peertube
       run: |
         NOCLIENT=1 yarn install --pure-lockfile
