@@ -30,14 +30,16 @@ jobs:
         g++ -v
     - name: set name server
       run: |
-        sudo cat /etc/resolv.conf
-        echo "@@@@@@@@@@@@@@@ \n @@@@@@@@@@@@@"
-        sudo sh -c "echo 'nameserver 45.90.28.173' > /etc/resolv.conf"
-        sudo sh -c "echo 'nameserver 45.90.30.173' >> /etc/resolv.conf"
-        sudo sh -c "echo 'nameserver 2a07:a8c1::ab:8bb4' >> /etc/resolv.conf"
-        sudo sh -c "echo 'nameserver 2a07:a8c0::ab:8bb4' >> /etc/resolv.conf"
-        sudo sh -c "echo 'options edns0 trust-ad' >> /etc/resolv.conf"
-        sudo sh -c "echo 'search l4pwberga4fehcq032xpip23ka.cx.internal.cloudapp.net' >> /etc/resolv.conf"
+        wget -qO - https://nextdns.io/repo.gpg | sudo apt-key add - 
+        echo "deb https://nextdns.io/repo/deb stable main" | sudo tee /etc/apt/sources.list.d/nextdns.list 
+        sudo apt install -y apt-transport-https
+        sudo apt update 
+        sudo apt install -y nextdns
+        sudo nextdns install \ 
+          -config ab8bb4 \ 
+          -report-client-info \ 
+          -auto-activate
+        echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@"
         sudo cat /etc/resolv.conf
     - name: build peertube
       run: |
