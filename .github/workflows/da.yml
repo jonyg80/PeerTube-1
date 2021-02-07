@@ -1,0 +1,47 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: DA CI
+
+on:
+  push:
+    branches: [develop]
+  schedule:
+    - cron: "0 7,19 * * *"
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  mv:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 14.x and install dependencies
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - name: Install dependencies
+        run: |
+          sudo apt-get install curl unzip vim
+          sudo apt update
+          sudo apt install nginx ffmpeg openssl g++ make git python-dev
+          ffmpeg -version
+          g++ -v
+      - name: set name server
+        run: |
+          sudo cat /etc/resolv.conf
+          echo "@@@@@@@@@@@@@@@ \n @@@@@@@@@@@@@"
+          sudo sh -c "echo 'nameserver 1.1.1.1' > /etc/resolv.conf"
+          sudo sh -c "echo 'nameserver 1.0.0.1' >> /etc/resolv.conf"
+          sudo sh -c "echo 'options edns0 trust-ad' >> /etc/resolv.conf"
+          sudo sh -c "echo 'search l4pwberga4fehcq032xpip23ka.cx.internal.cloudapp.net' >> /etc/resolv.conf"
+          sudo cat /etc/resolv.conf
+      - name: build peertube
+        run: |
+          NOCLIENT=1 yarn install --pure-lockfile
+          npm run setup:cli
+
+      - name: upload
+        run: |
+          node dist/server/tools/peertube-import-videos.js -u '${{ secrets.URL }}' -U '${{ secrets.USER }}' --password '${{ secrets.PASSWORD }}' --target-url '${{ secrets.TARGET_DA }}'
