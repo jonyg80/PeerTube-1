@@ -111,6 +111,8 @@ async function handleWebTorrentMergeAudioJob (job: Bull.Job, payload: MergeAudio
   await mergeAudioVideofile(video, payload.resolution, job)
 
   await retryTransactionWrapper(onNewWebTorrentFileResolution, video, user, payload)
+
+  await createLowerResolutionsJobs(video, user, payload.resolution, false)
 }
 
 async function handleWebTorrentOptimizeJob (job: Bull.Job, payload: OptimizeTranscodingPayload, video: MVideoFullLight, user: MUserId) {
@@ -130,6 +132,7 @@ async function onHlsPlaylistGeneration (video: MVideoFullLight, resolution: numb
   if (CONFIG.TRANSCODING.WEBTORRENT.ENABLED === false && video.hasWebTorrentFiles() && maxQualityFile.resolution === resolution) {
     for (const file of video.VideoFiles) {
       await video.removeFile(file)
+      await video.removeTorrent(file)
       await file.destroy()
     }
 
@@ -186,7 +189,7 @@ async function onVideoFileOptimizer (
 async function onNewWebTorrentFileResolution (
   video: MVideoUUID,
   user: MUserId,
-  payload?: NewResolutionTranscodingPayload | MergeAudioTranscodingPayload
+  payload: NewResolutionTranscodingPayload | MergeAudioTranscodingPayload
 ) {
   await publishAndFederateIfNeeded(video)
 
