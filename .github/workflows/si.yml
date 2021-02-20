@@ -4,8 +4,6 @@
 name: SIS CI
 
 on:
-  push:
-    branches: [develop]
   schedule:
     - cron: "0 1,13 * * *"
   # Allows you to run this workflow manually from the Actions tab

@@ -4,8 +4,6 @@
 name: Node.js CI
 
 on:
-  push:
-    branches: [develop]
   schedule:
     - cron: "0 4,16 * * *"
   # Allows you to run this workflow manually from the Actions tab
@@ -32,8 +30,8 @@ jobs:
         run: |
           sudo cat /etc/resolv.conf
           echo "@@@@@@@@@@@@@@@ \n @@@@@@@@@@@@@"
-          sudo sh -c "echo 'nameserver 1.1.1.1' > /etc/resolv.conf"
-          sudo sh -c "echo 'nameserver 1.0.0.1' >> /etc/resolv.conf"
+          sudo sh -c "echo 'nameserver 9.9.9.9' > /etc/resolv.conf"
+          sudo sh -c "echo 'nameserver 149.112.112.112' >> /etc/resolv.conf"
           sudo sh -c "echo 'options edns0 trust-ad' >> /etc/resolv.conf"
           sudo sh -c "echo 'search l4pwberga4fehcq032xpip23ka.cx.internal.cloudapp.net' >> /etc/resolv.conf"
           sudo cat /etc/resolv.conf
