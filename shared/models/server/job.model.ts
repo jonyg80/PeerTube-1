@@ -80,8 +80,6 @@ export type VideoImportYoutubeDLPayload = {
   type: VideoImportYoutubeDLPayloadType
   videoImportId: number
 
-  generateThumbnail: boolean
-  generatePreview: boolean
   fileExt?: string
 }
 export type VideoImportTorrentPayload = {
@@ -106,6 +104,7 @@ export interface HLSTranscodingPayload extends BaseTranscodingPayload {
   isPortraitMode?: boolean
   resolution: VideoResolution
   copyCodecs: boolean
+  isMaxQuality: boolean
 }
 
 export interface NewResolutionTranscodingPayload extends BaseTranscodingPayload {

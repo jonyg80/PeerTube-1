@@ -24,7 +24,7 @@ import { CONFIG, registerConfigChangedHandler } from './config'
 
 // ---------------------------------------------------------------------------
 
-const LAST_MIGRATION_VERSION = 570
+const LAST_MIGRATION_VERSION = 600
 
 // ---------------------------------------------------------------------------
 
@@ -146,14 +146,12 @@ const JOB_ATTEMPTS: { [id in JobType]: number } = {
   'video-redundancy': 1,
   'video-live-ending': 1
 }
-const JOB_CONCURRENCY: { [id in JobType]: number } = {
+const JOB_CONCURRENCY: { [id in JobType]?: number } = {
   'activitypub-http-broadcast': 1,
   'activitypub-http-unicast': 5,
   'activitypub-http-fetcher': 1,
   'activitypub-follow': 1,
   'video-file-import': 1,
-  'video-transcoding': 1,
-  'video-import': 1,
   'email': 5,
   'videos-views': 1,
   'activitypub-refresher': 1,
@@ -553,16 +551,13 @@ const NSFW_POLICY_TYPES: { [ id: string ]: NSFWPolicyType } = {
 
 // Express static paths (router)
 const STATIC_PATHS = {
-  PREVIEWS: '/static/previews/',
   THUMBNAILS: '/static/thumbnails/',
   TORRENTS: '/static/torrents/',
   WEBSEED: '/static/webseed/',
   REDUNDANCY: '/static/redundancy/',
   STREAMING_PLAYLISTS: {
     HLS: '/static/streaming-playlists/hls'
-  },
-  AVATARS: '/static/avatars/',
-  VIDEO_CAPTIONS: '/static/video-captions/'
+  }
 }
 const STATIC_DOWNLOAD_PATHS = {
   TORRENTS: '/download/torrents/',
@@ -572,12 +567,14 @@ const STATIC_DOWNLOAD_PATHS = {
 const LAZY_STATIC_PATHS = {
   AVATARS: '/lazy-static/avatars/',
   PREVIEWS: '/lazy-static/previews/',
-  VIDEO_CAPTIONS: '/lazy-static/video-captions/'
+  VIDEO_CAPTIONS: '/lazy-static/video-captions/',
+  TORRENTS: '/lazy-static/torrents/'
 }
 
 // Cache control
 const STATIC_MAX_AGE = {
   SERVER: '2h',
+  LAZY_SERVER: '2d',
   CLIENT: '30d'
 }
 
@@ -610,6 +607,10 @@ const FILES_CACHE = {
   },
   VIDEO_CAPTIONS: {
     DIRECTORY: join(CONFIG.STORAGE.CACHE_DIR, 'video-captions'),
+    MAX_AGE: 1000 * 3600 * 3 // 3 hours
+  },
+  TORRENTS: {
+    DIRECTORY: join(CONFIG.STORAGE.CACHE_DIR, 'torrents'),
     MAX_AGE: 1000 * 3600 * 3 // 3 hours
   }
 }

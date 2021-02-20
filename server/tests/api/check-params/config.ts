@@ -65,6 +65,9 @@ describe('Test config API validators', function () {
       },
       captions: {
         size: 3
+      },
+      torrents: {
+        size: 4
       }
     },
     signup: {
@@ -86,6 +89,7 @@ describe('Test config API validators', function () {
       enabled: true,
       allowAdditionalExtensions: true,
       allowAudioFiles: true,
+      concurrency: 1,
       threads: 1,
       profile: 'vod_profile',
       resolutions: {
@@ -130,6 +134,7 @@ describe('Test config API validators', function () {
     },
     import: {
       videos: {
+        concurrency: 1,
         http: {
           enabled: false
         },

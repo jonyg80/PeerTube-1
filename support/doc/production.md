@@ -134,7 +134,7 @@ To generate the certificate for your domain as required to make https work you c
 
 ```
 $ sudo systemctl stop nginx
-$ sudo certbot certonly --standalone --post-hook "systemctl start nginx"
+$ sudo certbot certonly --standalone --post-hook "systemctl restart nginx"
 $ sudo systemctl reload nginx
 ```
 
@@ -149,6 +149,7 @@ Since our nginx template supports webroot renewal, we suggest you to update the 
 
 ```
 $ # Replace authenticator = standalone by authenticator = webroot
+$ # Add webroot_path = /var/www/certbot
 $ sudo vim /etc/letsencrypt/renewal/your-domain.com.conf
 ```
 

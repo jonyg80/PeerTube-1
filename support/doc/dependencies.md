@@ -39,7 +39,7 @@ _note_: only **LTS** versions of external dependencies are supported. If no LTS 
 
 ```
 sudo apt update
-sudo apt install certbot nginx ffmpeg postgresql postgresql-contrib openssl g++ make redis-server git python-dev
+sudo apt install certbot nginx ffmpeg postgresql postgresql-contrib openssl g++ make redis-server git python-dev cron wget
 ffmpeg -version # Should be >= 4.1
 g++ -v # Should be >= 5.x
 ```
@@ -245,7 +245,7 @@ On a fresh install of [FreeBSD](https://www.freebsd.org), new system or new jail
 ```
 pkg
 pkg update
-pkg install -y sudo bash wget git python nginx pkgconf vips postgresql96-server postgresql96-contrib redis openssl node npm yarn ffmpeg unzip
+pkg install -y sudo bash wget git python nginx pkgconf postgresql96-server postgresql96-contrib redis openssl node npm yarn ffmpeg unzip
 ```
 
 2. Allow users in the wheel group (hope you don't forgot to add your user on wheel group!) to use sudo.
@@ -340,6 +340,37 @@ rc-update add redis
 rc-update add postgresql-11
 rc-service redis start
 rc-service postgresql-11 start
+```
+
+## OpenBSD
+
+1. Install Packages:
+
+```
+pkg_add sudo bash wget git python nginx pkgconf postgresql-server postgresql-contrib redis openssl
+```
+
+2. Install yarn:
+
+```
+npm install --global yarn
+```
+
+3. Allow users in the wheel group to use sudo
+
+```
+visudo
+```
+Uncomment line #43:
+
+```
+%wheel ALL=(ALL) ALL
+```
+
+4. Enable services:
+
+```
+rcctl enable postgresql redis nginx
 ```
 
 ## Other distributions
