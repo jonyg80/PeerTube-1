@@ -34,7 +34,7 @@ import { ModelCache } from '@server/models/model-cache'
 import { VideoFile } from '@shared/models/videos/video-file.model'
 import { ResultList, UserRight, VideoPrivacy, VideoState } from '../../../shared'
 import { VideoObject } from '../../../shared/models/activitypub/objects'
-import { Video, VideoDetails } from '../../../shared/models/videos'
+import { Video, VideoDetails, VideoRateType } from '../../../shared/models/videos'
 import { ThumbnailType } from '../../../shared/models/videos/thumbnail.type'
 import { VideoFilter } from '../../../shared/models/videos/video-query.type'
 import { VideoStreamingPlaylistType } from '../../../shared/models/videos/video-streaming-playlist.type'
@@ -356,6 +356,7 @@ export type AvailableForListIDsOptions = {
       include: [
         {
           model: VideoFileModel,
+          separate: true,
           required: false,
           include: subInclude
         }
@@ -383,6 +384,7 @@ export type AvailableForListIDsOptions = {
         {
           model: VideoStreamingPlaylistModel.unscoped(),
           required: false,
+          separate: true,
           include: subInclude
         }
       ]
@@ -424,7 +426,12 @@ export type AvailableForListIDsOptions = {
       ]
     },
     { fields: [ 'duration' ] },
-    { fields: [ 'views' ] },
+    {
+      fields: [
+        { name: 'views', order: 'DESC' },
+        { name: 'id', order: 'ASC' }
+      ]
+    },
     { fields: [ 'channelId' ] },
     {
       fields: [ 'originallyPublishedAt' ],
@@ -776,21 +783,20 @@ export class VideoModel extends Model {
 
   @BeforeDestroy
   static async sendDelete (instance: MVideoAccountLight, options) {
-    if (instance.isOwned()) {
-      if (!instance.VideoChannel) {
-        instance.VideoChannel = await instance.$get('VideoChannel', {
-          include: [
-            ActorModel,
-            AccountModel
-          ],
-          transaction: options.transaction
-        }) as MChannelAccountDefault
-      }
+    if (!instance.isOwned()) return undefined
 
-      return sendDeleteVideo(instance, options.transaction)
+    // Lazy load channels
+    if (!instance.VideoChannel) {
+      instance.VideoChannel = await instance.$get('VideoChannel', {
+        include: [
+          ActorModel,
+          AccountModel
+        ],
+        transaction: options.transaction
+      }) as MChannelAccountDefault
     }
 
-    return undefined
+    return sendDeleteVideo(instance, options.transaction)
   }
 
   @BeforeDestroy
@@ -855,6 +861,7 @@ export class VideoModel extends Model {
 
     logger.info('Saving video abuses details of video %s.', instance.url)
 
+    if (!instance.Trackers) instance.Trackers = await instance.$get('Trackers', { transaction: options.transaction })
     const details = instance.toFormattedDetailsJSON()
 
     for (const abuse of instance.VideoAbuses) {
@@ -1312,8 +1319,7 @@ export class VideoModel extends Model {
 
     return VideoModel.scope([
       ScopeNames.WITH_BLACKLISTED,
-      ScopeNames.WITH_USER_ID,
-      ScopeNames.WITH_THUMBNAILS
+      ScopeNames.WITH_USER_ID
     ]).findOne(options)
   }
 
@@ -1505,6 +1511,24 @@ export class VideoModel extends Model {
       where: {
         id
       }
+    })
+  }
+
+  static updateRatesOf (videoId: number, type: VideoRateType, t: Transaction) {
+    const field = type === 'like'
+      ? 'likes'
+      : 'dislikes'
+
+    const rawQuery = `UPDATE "video" SET "${field}" = ` +
+      '(' +
+      'SELECT COUNT(id) FROM "accountVideoRate" WHERE "accountVideoRate"."videoId" = "video"."id" AND type = :rateType' +
+      ') ' +
+      'WHERE "video"."id" = :videoId'
+
+    return AccountVideoRateModel.sequelize.query(rawQuery, {
+      transaction: t,
+      replacements: { videoId, rateType: type },
+      type: QueryTypes.UPDATE
     })
   }
 

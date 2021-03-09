@@ -60,9 +60,12 @@ export class VideoWatchComponent implements OnInit, OnDestroy {
 
   player: any
   playerElement: HTMLVideoElement
+
   theaterEnabled = false
+
   userRating: UserVideoRateType = null
-  descriptionLoading = false
+
+  playerPlaceholderImgSrc: string
 
   video: VideoDetails = null
   videoCaptions: VideoCaption[] = []
@@ -70,13 +73,17 @@ export class VideoWatchComponent implements OnInit, OnDestroy {
   playlistPosition: number
   playlist: VideoPlaylist = null
 
+  descriptionLoading = false
   completeDescriptionShown = false
   completeVideoDescription: string
   shortVideoDescription: string
   videoHTMLDescription = ''
+
   likesBarTooltipText = ''
+
   hasAlreadyAcceptedPrivacyConcern = false
   remoteServerDown = false
+
   hotkeys: Hotkey[] = []
 
   tooltipLike = ''
@@ -539,6 +546,7 @@ export class VideoWatchComponent implements OnInit, OnDestroy {
     this.videoCaptions = videoCaptions
 
     // Re init attributes
+    this.playerPlaceholderImgSrc = undefined
     this.descriptionLoading = false
     this.completeDescriptionShown = false
     this.completeVideoDescription = undefined
@@ -553,11 +561,27 @@ export class VideoWatchComponent implements OnInit, OnDestroy {
       if (res === false) return this.location.back()
     }
 
-    const videoState = this.video.state.id
-    if (videoState === VideoState.LIVE_ENDED || videoState === VideoState.WAITING_FOR_LIVE) return
+    this.buildPlayer(urlOptions)
+      .catch(err => console.error('Cannot build the player', err))
 
+    this.setVideoDescriptionHTML()
+    this.setVideoLikesBarTooltipText()
+
+    this.setOpenGraphTags()
+    this.checkUserRating()
+
+    this.hooks.runAction('action:video-watch.video.loaded', 'video-watch', { videojs })
+  }
+
+  private async buildPlayer (urlOptions: URLOptions) {
     // Flush old player if needed
     this.flushPlayer()
+
+    const videoState = this.video.state.id
+    if (videoState === VideoState.LIVE_ENDED || videoState === VideoState.WAITING_FOR_LIVE) {
+      this.playerPlaceholderImgSrc = this.video.previewPath
+      return
+    }
 
     // Build video element, because videojs removes it on dispose
     const playerElementWrapper = this.elementRef.nativeElement.querySelector('#videojs-wrapper')
@@ -568,7 +592,7 @@ export class VideoWatchComponent implements OnInit, OnDestroy {
 
     const params = {
       video: this.video,
-      videoCaptions,
+      videoCaptions: this.videoCaptions,
       urlOptions,
       user: this.user
     }
@@ -642,14 +666,6 @@ export class VideoWatchComponent implements OnInit, OnDestroy {
 
       this.hooks.runAction('action:video-watch.player.loaded', 'video-watch', { player: this.player, videojs, video: this.video })
     })
-
-    this.setVideoDescriptionHTML()
-    this.setVideoLikesBarTooltipText()
-
-    this.setOpenGraphTags()
-    this.checkUserRating()
-
-    this.hooks.runAction('action:video-watch.video.loaded', 'video-watch', { videojs })
   }
 
   private autoplayNext () {

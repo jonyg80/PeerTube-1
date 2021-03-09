@@ -5,6 +5,7 @@ on:
     branches:
       - develop
       - master
+      - ci
   pull_request:
     types: [synchronize, opened]
   schedule:

@@ -8,6 +8,7 @@ export type JobType =
   | 'activitypub-http-unicast'
   | 'activitypub-http-broadcast'
   | 'activitypub-http-fetcher'
+  | 'activitypub-cleaner'
   | 'activitypub-follow'
   | 'video-file-import'
   | 'video-transcoding'
@@ -17,6 +18,7 @@ export type JobType =
   | 'activitypub-refresher'
   | 'video-redundancy'
   | 'video-live-ending'
+  | 'actor-keys'
 
 export interface Job {
   id: number
@@ -130,4 +132,8 @@ export type VideoTranscodingPayload =
 
 export interface VideoLiveEndingPayload {
   videoId: number
+}
+
+export interface ActorKeysPayload {
+  actorId: number
 }

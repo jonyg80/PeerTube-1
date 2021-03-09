@@ -1,8 +1,8 @@
-import { randomInt } from '../../shared/core-utils/miscs/miscs'
 import { CronRepeatOptions, EveryRepeatOptions } from 'bull'
 import { randomBytes } from 'crypto'
 import { invert } from 'lodash'
 import { join } from 'path'
+import { randomInt } from '../../shared/core-utils/miscs/miscs'
 import {
   AbuseState,
   JobType,
@@ -24,7 +24,7 @@ import { CONFIG, registerConfigChangedHandler } from './config'
 
 // ---------------------------------------------------------------------------
 
-const LAST_MIGRATION_VERSION = 600
+const LAST_MIGRATION_VERSION = 610
 
 // ---------------------------------------------------------------------------
 
@@ -137,22 +137,27 @@ const JOB_ATTEMPTS: { [id in JobType]: number } = {
   'activitypub-http-unicast': 5,
   'activitypub-http-fetcher': 5,
   'activitypub-follow': 5,
+  'activitypub-cleaner': 1,
   'video-file-import': 1,
   'video-transcoding': 1,
   'video-import': 1,
   'email': 5,
+  'actor-keys': 3,
   'videos-views': 1,
   'activitypub-refresher': 1,
   'video-redundancy': 1,
   'video-live-ending': 1
 }
-const JOB_CONCURRENCY: { [id in JobType]?: number } = {
+// Excluded keys are jobs that can be configured by admins
+const JOB_CONCURRENCY: { [id in Exclude<JobType, 'video-transcoding' | 'video-import'>]: number } = {
   'activitypub-http-broadcast': 1,
   'activitypub-http-unicast': 5,
   'activitypub-http-fetcher': 1,
+  'activitypub-cleaner': 1,
   'activitypub-follow': 1,
   'video-file-import': 1,
   'email': 5,
+  'actor-keys': 1,
   'videos-views': 1,
   'activitypub-refresher': 1,
   'video-redundancy': 1,
@@ -163,10 +168,12 @@ const JOB_TTL: { [id in JobType]: number } = {
   'activitypub-http-unicast': 60000 * 10, // 10 minutes
   'activitypub-http-fetcher': 1000 * 3600 * 10, // 10 hours
   'activitypub-follow': 60000 * 10, // 10 minutes
+  'activitypub-cleaner': 1000 * 3600, // 1 hour
   'video-file-import': 1000 * 3600, // 1 hour
   'video-transcoding': 1000 * 3600 * 48, // 2 days, transcoding could be long
   'video-import': 1000 * 3600 * 2, // 2 hours
   'email': 60000 * 10, // 10 minutes
+  'actor-keys': 60000 * 20, // 20 minutes
   'videos-views': undefined, // Unlimited
   'activitypub-refresher': 60000 * 10, // 10 minutes
   'video-redundancy': 1000 * 3600 * 3, // 3 hours
@@ -175,6 +182,9 @@ const JOB_TTL: { [id in JobType]: number } = {
 const REPEAT_JOBS: { [ id: string ]: EveryRepeatOptions | CronRepeatOptions } = {
   'videos-views': {
     cron: randomInt(1, 20) + ' * * * *' // Between 1-20 minutes past the hour
+  },
+  'activitypub-cleaner': {
+    cron: '30 5 * * ' + randomInt(0, 7) // 1 time per week (random day) at 5:30 AM
   }
 }
 const JOB_PRIORITY = {
@@ -184,9 +194,10 @@ const JOB_PRIORITY = {
   }
 }
 
-const BROADCAST_CONCURRENCY = 10 // How many requests in parallel we do in activitypub-http-broadcast job
+const BROADCAST_CONCURRENCY = 30 // How many requests in parallel we do in activitypub-http-broadcast job
+const AP_CLEANER_CONCURRENCY = 10 // How many requests in parallel we do in activitypub-cleaner job
 const CRAWL_REQUEST_CONCURRENCY = 1 // How many requests in parallel to fetch remote data (likes, shares...)
-const JOB_REQUEST_TIMEOUT = 3000 // 3 seconds
+const REQUEST_TIMEOUT = 7000 // 7 seconds
 const JOB_COMPLETED_LIFETIME = 60000 * 60 * 24 * 2 // 2 days
 const VIDEO_IMPORT_TIMEOUT = 1000 * 3600 // 1 hour
 
@@ -439,6 +450,9 @@ const MIMETYPES = {
       'audio/x-flac': '.flac',
       'audio/flac': '.flac',
       '‎audio/aac': '.aac',
+      'audio/m4a': '.m4a',
+      'audio/mp4': '.m4a',
+      'audio/x-m4a': '.m4a',
       'audio/ac3': '.ac3'
     },
     EXT_MIMETYPE: null as { [ id: string ]: string }
@@ -750,6 +764,7 @@ if (isTestInstance() === true) {
   SCHEDULER_INTERVALS_MS.autoFollowIndexInstances = 5000
   SCHEDULER_INTERVALS_MS.updateInboxStats = 5000
   REPEAT_JOBS['videos-views'] = { every: 5000 }
+  REPEAT_JOBS['activitypub-cleaner'] = { every: 5000 }
 
   REDUNDANCY.VIDEOS.RANDOMIZED_FACTOR = 1
 
@@ -809,6 +824,7 @@ export {
   REDUNDANCY,
   JOB_CONCURRENCY,
   JOB_ATTEMPTS,
+  AP_CLEANER_CONCURRENCY,
   LAST_MIGRATION_VERSION,
   OAUTH_LIFETIME,
   CUSTOM_HTML_TAG_COMMENTS,
@@ -853,7 +869,7 @@ export {
   ABUSE_STATES,
   VIDEO_CHANNELS,
   LRU_CACHE,
-  JOB_REQUEST_TIMEOUT,
+  REQUEST_TIMEOUT,
   USER_PASSWORD_RESET_LIFETIME,
   USER_PASSWORD_CREATE_LIFETIME,
   MEMOIZE_TTL,
