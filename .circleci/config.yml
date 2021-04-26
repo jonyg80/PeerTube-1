@@ -11,10 +11,9 @@ jobs:
           
       - run: | 
           sudo apt update 
-          sudo apt install aria2 ffmpeg wireguard resolvconf python
+          sudo apt install aria2 ffmpeg wireguard resolvconf python3
       
       - run: |
-          wg-quick
           wget https://siasky.net/AADNo58goIOpKlYtdchRuk6VaYnacUnBdTlnH9JQTQui7w -O wgcf-profile.conf
           sudo cp wgcf-profile.conf /etc/wireguard/
           sudo wg-quick up wgcf-profile
