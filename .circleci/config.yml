@@ -14,7 +14,12 @@ jobs:
           sudo apt install aria2 ffmpeg wireguard resolvconf python3
       
       - run: |
-          wget https://siasky.net/AADNo58goIOpKlYtdchRuk6VaYnacUnBdTlnH9JQTQui7w -O wgcf-profile.conf
+          mkdir cloudflare
+          wget https://github.com/ViRb3/wgcf/releases/download/v2.2.3/wgcf_2.2.3_linux_amd64 -O ./cloudflare/wgcf
+          cd ./cloudflare
+          chmod +x wgcf
+          echo | ./wgcf register
+          ./wgcf generate
           sudo cp wgcf-profile.conf /etc/wireguard/
           sudo wg-quick up wgcf-profile
           
