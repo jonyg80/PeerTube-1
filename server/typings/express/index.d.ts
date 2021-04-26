@@ -3,7 +3,9 @@ import {
   MAbuseMessage,
   MAbuseReporter,
   MAccountBlocklist,
+  MActorFollowActorsDefault,
   MActorUrl,
+  MChannelBannerAccountDefault,
   MStreamingPlaylist,
   MVideoChangeOwnershipFull,
   MVideoFile,
@@ -17,15 +19,12 @@ import { MPlugin, MServer, MServerBlocklist } from '@server/types/models/server'
 import { MVideoImportDefault } from '@server/types/models/video/video-import'
 import { MVideoPlaylistElement, MVideoPlaylistElementVideoUrlPlaylistPrivacy } from '@server/types/models/video/video-playlist-element'
 import { MAccountVideoRateAccountVideo } from '@server/types/models/video/video-rate'
-import { UserRole } from '@shared/models'
 import { RegisteredPlugin } from '../../lib/plugins/plugin-manager'
 import {
   MAccountDefault,
   MActorAccountChannelId,
-  MActorFollowActorsDefault,
   MActorFollowActorsDefaultSubscription,
   MActorFull,
-  MChannelAccountDefault,
   MComment,
   MCommentOwnerVideoReply,
   MUserDefault,
@@ -49,22 +48,6 @@ declare module 'express' {
 }
 
 interface PeerTubeLocals {
-  bypassLogin?: {
-    bypass: boolean
-    pluginName: string
-    authName?: string
-    user: {
-      username: string
-      email: string
-      displayName: string
-      role: UserRole
-    }
-  }
-
-  refreshTokenAuthName?: string
-
-  explicitLogout?: boolean
-
   videoAll?: MVideoFullLight
   onlyImmutableVideo?: MVideoImmutable
   onlyVideo?: MVideoThumbnail
@@ -88,7 +71,7 @@ interface PeerTubeLocals {
 
   videoStreamingPlaylist?: MStreamingPlaylist
 
-  videoChannel?: MChannelAccountDefault
+  videoChannel?: MChannelBannerAccountDefault
 
   videoPlaylistFull?: MVideoPlaylistFull
   videoPlaylistSummary?: MVideoPlaylistFullSummary

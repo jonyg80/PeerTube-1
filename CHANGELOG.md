@@ -1,9 +1,10 @@
 # Changelog
 
-## v3.1.0-rc.1 (stable ~ late March)
+## v3.1.0
 
 ### IMPORTANT NOTES
 
+ * **Important:** Drop PostgreSQL 9.6 support
  * **Important:** Deprecate NodeJS 10
  * Support NodeJS 14 and 15
  * Remove ES5 module support (breaks compatibility with web browsers we didn't support)
@@ -47,6 +48,7 @@
    * Transcode audio uploads to lower configured resolutions
    * Transcode HLS playlists in a `tmp` directory (less bugs/inconsistencies)
    * Allow admins to choose the transcoding jobs concurrency
+ * Support Albanian locale
  * Video upload:
    * Async torrent creation on video upload. We hope that it should fix some weird upload errors
    * Add `.m4a` audio upload support
@@ -131,6 +133,9 @@
    * Don't update live attributes if they did not change (allowing to update live metadata even if the live has started)
    * Fix live RAM usage when ffmpeg is too slow to transcode the RTMP stream
    * Correctly load live information (description and preview) when not started
+ * Fix mention notification with deleted comment
+ * Fix default boolean plugin setting
+ * Fix long text on modals [#3840](https://github.com/Chocobozzz/PeerTube/pull/3840)
 
 ## v3.0.1
 

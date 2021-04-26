@@ -1,6 +1,6 @@
 import 'videojs-hotkeys/videojs.hotkeys'
 import 'videojs-dock'
-import 'videojs-contextmenu-ui'
+import 'videojs-contextmenu-pt'
 import 'videojs-contrib-quality-levels'
 import './upnext/end-card'
 import './upnext/upnext-plugin'
@@ -98,12 +98,15 @@ export interface CommonOptions extends CustomizationOptions {
 
   videoViewUrl: string
   embedUrl: string
+  embedTitle: string
 
   isLive: boolean
 
   language?: string
 
   videoCaptions: VideoJSCaption[]
+
+  videoUUID: string
 
   userWatching?: UserWatching
 
@@ -119,7 +122,6 @@ export type PeertubePlayerManagerOptions = {
 export class PeertubePlayerManager {
   private static playerElementClassName: string
   private static onPlayerChange: (player: videojs.Player) => void
-
   private static alreadyPlayed = false
 
   static initState () {
@@ -165,7 +167,7 @@ export class PeertubePlayerManager {
           PeertubePlayerManager.alreadyPlayed = true
         })
 
-        self.addContextMenu(mode, player, options.common.embedUrl)
+        self.addContextMenu(mode, player, options.common.embedUrl, options.common.embedTitle)
 
         player.bezels()
 
@@ -203,7 +205,7 @@ export class PeertubePlayerManager {
     videojs(newVideoElement, videojsOptions, function (this: videojs.Player) {
       const player = this
 
-      self.addContextMenu(mode, player, options.common.embedUrl)
+      self.addContextMenu(mode, player, options.common.embedUrl, options.common.embedTitle)
 
       PeertubePlayerManager.onPlayerChange(player)
     })
@@ -218,7 +220,9 @@ export class PeertubePlayerManager {
     const isHLS = mode === 'p2p-media-loader'
 
     let autoplay = this.getAutoPlayValue(commonOptions.autoplay)
-    let html5 = {}
+    let html5 = {
+      preloadTextTracks: false
+    }
 
     const plugins: VideoJSPluginOptions = {
       peertube: {
@@ -230,7 +234,8 @@ export class PeertubePlayerManager {
         subtitle: commonOptions.subtitle,
         videoCaptions: commonOptions.videoCaptions,
         stopTime: commonOptions.stopTime,
-        isLive: commonOptions.isLive
+        isLive: commonOptions.isLive,
+        videoUUID: commonOptions.videoUUID
       }
     }
 
@@ -245,7 +250,7 @@ export class PeertubePlayerManager {
     if (isHLS) {
       const { hlsjs } = PeertubePlayerManager.addP2PMediaLoaderOptions(plugins, options, p2pMediaLoaderModule)
 
-      html5 = hlsjs.html5
+      Object.assign(html5, hlsjs.html5)
     }
 
     if (mode === 'webtorrent') {
@@ -271,7 +276,7 @@ export class PeertubePlayerManager {
 
       poster: commonOptions.poster,
       inactivityTimeout: commonOptions.inactivityTimeout,
-      playbackRates: [ 0.5, 0.75, 1, 1.25, 1.5, 2 ],
+      playbackRates: [ 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2 ],
 
       plugins,
 
@@ -492,37 +497,54 @@ export class PeertubePlayerManager {
     return children
   }
 
-  private static addContextMenu (mode: PlayerMode, player: videojs.Player, videoEmbedUrl: string) {
-    const content = [
-      {
-        label: player.localize('Copy the video URL'),
-        listener: function () {
-          copyToClipboard(buildVideoLink())
+  private static addContextMenu (mode: PlayerMode, player: videojs.Player, videoEmbedUrl: string, videoEmbedTitle: string) {
+    const content = () => {
+      const isLoopEnabled = player.options_['loop']
+      const items = [
+        {
+          icon: 'repeat',
+          label: player.localize('Play in loop') + (isLoopEnabled ? '<span class="vjs-icon-tick-white"></span>' : ''),
+          listener: function () {
+            player.options_['loop'] = !isLoopEnabled
+          }
+        },
+        {
+          label: player.localize('Copy the video URL'),
+          listener: function () {
+            copyToClipboard(buildVideoLink())
+          }
+        },
+        {
+          label: player.localize('Copy the video URL at the current time'),
+          listener: function (this: videojs.Player) {
+            copyToClipboard(buildVideoLink({ startTime: this.currentTime() }))
+          }
+        },
+        {
+          icon: 'code',
+          label: player.localize('Copy embed code'),
+          listener: () => {
+            copyToClipboard(buildVideoOrPlaylistEmbed(videoEmbedUrl, videoEmbedTitle))
+          }
         }
-      },
-      {
-        label: player.localize('Copy the video URL at the current time'),
-        listener: function (this: videojs.Player) {
-          copyToClipboard(buildVideoLink({ startTime: this.currentTime() }))
-        }
-      },
-      {
-        label: player.localize('Copy embed code'),
-        listener: () => {
-          copyToClipboard(buildVideoOrPlaylistEmbed(videoEmbedUrl))
-        }
-      }
-    ]
+      ]
 
-    if (mode === 'webtorrent') {
-      content.push({
-        label: player.localize('Copy magnet URI'),
-        listener: function (this: videojs.Player) {
-          copyToClipboard(this.webtorrent().getCurrentVideoFile().magnetUri)
-        }
-      })
+      if (mode === 'webtorrent') {
+        items.push({
+          label: player.localize('Copy magnet URI'),
+          listener: function (this: videojs.Player) {
+            copyToClipboard(this.webtorrent().getCurrentVideoFile().magnetUri)
+          }
+        })
+      }
+
+      return items.map(i => ({
+        ...i,
+        label: `<span class="vjs-icon-${i.icon || 'link-2'}"></span>` + i.label
+      }))
     }
 
+    // adding the menu
     player.contextmenuUI({ content })
   }
 

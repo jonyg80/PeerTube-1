@@ -24,7 +24,7 @@
 
   <ng-template pTemplate="header">
     <tr>
-      <th style="width: 150px;">Action</th> <!-- column for action buttons -->
+      <th style="width: 150px;" i18n>Action</th> <!-- column for action buttons -->
       <th style="width: calc(100% - 300px);" i18n>Account</th>
       <th style="width: 150px;" i18n pSortableColumn="createdAt">Muted at <p-sortIcon field="createdAt"></p-sortIcon></th>
     </tr>
@@ -38,12 +38,7 @@
       <td>
         <a [href]="accountBlock.blockedAccount.url" i18n-title title="Open account in a new tab" target="_blank" rel="noopener noreferrer">
           <div class="chip two-lines">
-            <img
-              class="avatar"
-              [src]="accountBlock.blockedAccount.avatar?.path"
-              (error)="switchToDefaultAvatar($event)"
-              alt="Avatar"
-            >
+            <my-account-avatar [account]="accountBlock.blockedAccount"></my-account-avatar>
             <div>
               {{ accountBlock.blockedAccount.displayName }}
               <span class="text-muted">{{ accountBlock.blockedAccount.nameWithHost }}</span>

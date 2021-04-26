@@ -117,12 +117,9 @@ export class AbuseListTableComponent extends RestTable implements OnInit, AfterV
         warningTitle: false,
         startTime: abuse.video.startAt,
         stopTime: abuse.video.endAt
-      })
+      }),
+      abuse.video.name
     )
-  }
-
-  switchToDefaultAvatar ($event: Event) {
-    ($event.target as HTMLImageElement).src = Account.GET_DEFAULT_AVATAR_URL()
   }
 
   async removeAbuse (abuse: AdminAbuse) {
