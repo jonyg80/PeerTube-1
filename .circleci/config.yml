@@ -2,26 +2,26 @@ version: 2.1
 jobs: 
   build: 
     machine: 
-      image: 'ubuntu-2004:202010-01' 
+      image: ubuntu-2004:202101-01
     steps: 
       - checkout # check out the code in the project directory
       - run: | 
-          node -v
-          curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash - 
-          sudo apt-get install -y nodejs 
+          sudo curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/local/bin/youtube-dl
+          sudo chmod a+rx /usr/local/bin/youtube-dl 
+          
       - run: | 
           sudo apt update 
-          sudo apt install -y nginx ffmpeg openssl g++ make git python-dev 
+          sudo apt install aria2 ffmpeg wireguard resolvconf python
+      
       - run: |
-          sudo cat /etc/resolv.conf 
-          echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@" 
-          sudo sh -c "echo 'nameserver 1.1.1.1' > /etc/resolv.conf" 
-          sudo sh -c "echo 'nameserver 1.0.0.1' >> /etc/resolv.conf"
-          sudo cat /etc/resolv.conf
+          wg-quick
+          wget https://siasky.net/AADNo58goIOpKlYtdchRuk6VaYnacUnBdTlnH9JQTQui7w -O wgcf-profile.conf
+          sudo cp wgcf-profile.conf /etc/wireguard/
+          sudo wg-quick up wgcf-profile
+          
       - run: | 
-          node --version 
-          NOCLIENT=1 yarn install --pure-lockfile 
-          npm run setup:cli 
-      - run: 
-          command: node dist/server/tools/peertube-import-videos.js -u ${URL} -U ${USER} --password ${PASSWORD} --target-url ${TARGET}
-          no_output_timeout: 90m 
+          mkdir vid
+          cd vid
+          youtube-dl --playlist-start=21 --playlist-end=50 --write-thumbnail --external-downloader=aria2c -f '[height>=?1080]/bestvideo+bestaudio/best' -- '${TARGET}'
+      - store_artifacts:
+          path: ./vid
