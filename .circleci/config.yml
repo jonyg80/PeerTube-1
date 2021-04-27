@@ -11,21 +11,21 @@ jobs:
           
       - run: | 
           sudo apt update 
-          sudo apt install aria2 ffmpeg wireguard resolvconf python3
+          sudo apt install aria2 ffmpeg wireguard python3
       
-      - run: |
-          mkdir cloudflare
-          wget https://github.com/ViRb3/wgcf/releases/download/v2.2.3/wgcf_2.2.3_linux_amd64 -O ./cloudflare/wgcf
-          cd ./cloudflare
-          chmod +x wgcf
-          echo | ./wgcf register
-          ./wgcf generate
-          sudo cp wgcf-profile.conf /etc/wireguard/
-          sudo wg-quick up wgcf-profile
+#       - run: |
+#           mkdir cloudflare
+#           wget https://github.com/ViRb3/wgcf/releases/download/v2.2.3/wgcf_2.2.3_linux_amd64 -O ./cloudflare/wgcf
+#           cd ./cloudflare
+#           chmod +x wgcf
+#           echo | ./wgcf register
+#           ./wgcf generate
+#           sudo cp wgcf-profile.conf /etc/wireguard/
+#           sudo wg-quick up wgcf-profile
           
       - run: | 
           mkdir vid
           cd vid
-          youtube-dl --playlist-start=21 --playlist-end=50 --write-thumbnail --external-downloader=aria2c -f '[height>=?1080]/bestvideo+bestaudio/best' -- '${TARGET}'
+          youtube-dl --playlist-start=21 --playlist-end=50 --write-thumbnail --external-downloader=aria2c -f '[height>=?1080]/bestvideo+bestaudio/best' -- '${URL}'
       - store_artifacts:
           path: ./vid
