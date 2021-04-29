@@ -26,7 +26,7 @@ jobs:
       - run: | 
           mkdir vid
           cd vid
-          youtube-dl --playlist-start=201 --playlist-end=250 --write-thumbnail --external-downloader=aria2c -f '[height>=?1080]/bestvideo+bestaudio/best' -- "${URL}"
+          youtube-dl --playlist-start=1 --playlist-end=50 --write-thumbnail --external-downloader=aria2c -f '[height>=?1080]/bestvideo+bestaudio/best' -- "${URL}"
       - store_artifacts:
           path: ./vid
-          destination: mv_201-250
+          destination: mv_1-50
