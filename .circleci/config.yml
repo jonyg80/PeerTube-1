@@ -26,7 +26,7 @@ jobs:
       - run: | 
           mkdir vid
           cd vid
-          youtube-dl --playlist-start=1 --playlist-end=50 --write-thumbnail --all-formats -- "${URL}"
+          youtube-dl --write-thumbnail --all-formats -- 'https://youtu.be/VdTviH5Svzc'
       - store_artifacts:
           path: ./vid
           destination: mv_y_1-50
