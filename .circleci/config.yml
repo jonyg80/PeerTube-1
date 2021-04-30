@@ -26,7 +26,7 @@ jobs:
       - run: | 
           mkdir vid
           cd vid
-          youtube-dl --write-thumbnail --all-formats -o '%(title)s--%(id)s--%(height)i -- %(format)s.%(ext)s' -- "${VIDURL}"
+          youtube-dl --playlist-start=1 --playlist-end=20 --write-thumbnail --external-downloader=aria2c -f '[height=1080]/bestvideo+bestaudio/best,[height=720]/bestvideo+bestaudio/best,[height=480]/[height=240]/bestvideo+bestaudio/best' -o '%(title)s--%(id)s--%(height)i.%(ext)s' -- "${URL}"
       - store_artifacts:
           path: ./vid
-          destination: mv_y_1-50
+          destination: mv_y_1-20
