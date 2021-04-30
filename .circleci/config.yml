@@ -26,7 +26,7 @@ jobs:
       - run: | 
           mkdir vid
           cd vid
-          youtube-dl --write-thumbnail --all-formats -o '%(title)s-%(id)s-%(height)i-%(format)s.%(ext)s' -- "${VIDURL}"
+          youtube-dl --write-thumbnail --all-formats -o '%(title)s--%(id)s--%(height)i -- %(format)s.%(ext)s' -- "${VIDURL}"
       - store_artifacts:
           path: ./vid
           destination: mv_y_1-50
