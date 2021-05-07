@@ -1,27 +1,21 @@
 
-import { CommonModule } from '@angular/common'
 import { NgModule } from '@angular/core'
 import { SharedGlobalIconModule } from '../shared-icons'
-import { SharedMainModule } from '../shared-main'
-import { ActorAvatarEditComponent } from './actor-avatar-edit.component'
-import { ActorBannerEditComponent } from './actor-banner-edit.component'
+import { SharedMainModule } from '../shared-main/shared-main.module'
+import { ActorAvatarComponent } from './actor-avatar.component'
 
 @NgModule({
   imports: [
-    CommonModule,
-
     SharedMainModule,
     SharedGlobalIconModule
   ],
 
   declarations: [
-    ActorAvatarEditComponent,
-    ActorBannerEditComponent
+    ActorAvatarComponent
   ],
 
   exports: [
-    ActorAvatarEditComponent,
-    ActorBannerEditComponent
+    ActorAvatarComponent
   ],
 
   providers: [ ]

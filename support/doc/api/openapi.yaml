@@ -12,8 +12,6 @@ info:
     url: 'https://joinpeertube.org/img/brand.png'
     altText: PeerTube Project Homepage
   description: |
-    # Introduction
-
     The PeerTube API is built on HTTP(S) and is RESTful. You can use your favorite
     HTTP/REST library for your programming language to use PeerTube. The spec API is fully compatible with
     [openapi-generator](https://github.com/OpenAPITools/openapi-generator/wiki/API-client-generator-HOWTO)
@@ -23,13 +21,14 @@ info:
     - [Go](https://framagit.org/framasoft/peertube/clients/go)
     - [Kotlin](https://framagit.org/framasoft/peertube/clients/kotlin)
 
-    See the [Quick Start guide](https://docs.joinpeertube.org/api-rest-getting-started) so you can play with the PeerTube API.
+    See the [REST API quick start](https://docs.joinpeertube.org/api-rest-getting-started) for a few
+    examples of using with the PeerTube API.
 
     # Authentication
 
-    When you sign up for an account, you are given the possibility to generate
-    sessions, and authenticate using this session token. One session token can
-    currently be used at a time.
+    When you sign up for an account on a PeerTube instance, you are given the possibility
+    to generate sessions on it, and authenticate there using a session token. Only __one
+    session token can currently be used at a time__.
 
     ## Roles
 
@@ -48,6 +47,31 @@ info:
       "error": "Token is invalid." // example exposed error message
     }
     ```
+
+    # Rate limits
+
+    We are rate-limiting all endpoints of PeerTube's API. Custom values can be configured
+    by administrators:
+
+    | Endpoint                | Calls            | Time frame                |
+    |-------------------------|------------------|---------------------------|
+    | `/*`                    | 50               | 10 seconds                |
+    | `POST /users/token`     | 15               | 5 minutes                 |
+    | `POST /users/register`  | 2¹               | 5 minutes                 |
+    | `POST /users/ask-send-verify-email` | 3    | 5 minutes                 |
+
+    Depending on the endpoint, ¹failed requests are not taken into account. A service
+    limit is announced by a `429 Too Many Requests` status code.
+
+    You can get details about the current state of your rate limit by reading the
+    following headers:
+
+    | Header                  | Description                                                |
+    |-------------------------|------------------------------------------------------------|
+    | X-RateLimit-Limit       | Number of max requests allowed in the current time period  |
+    | X-RateLimit-Remaining   | Number of remaining requests in the current time period    |
+    | X-RateLimit-Reset       | Timestamp of end of current time period as UNIX timestamp  |
+    | Retry-After             | Seconds to delay after the first `429` is received         |
 externalDocs:
   url: https://docs.joinpeertube.org/api-rest-reference.html
 tags:
@@ -210,6 +234,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/name'
         - $ref: '#/components/parameters/categoryOneOf'
+        - $ref: '#/components/parameters/isLive'
         - $ref: '#/components/parameters/tagsOneOf'
         - $ref: '#/components/parameters/tagsAllOf'
         - $ref: '#/components/parameters/licenceOneOf'
@@ -781,6 +806,7 @@ paths:
         - Videos
       parameters:
         - $ref: '#/components/parameters/categoryOneOf'
+        - $ref: '#/components/parameters/isLive'
         - $ref: '#/components/parameters/tagsOneOf'
         - $ref: '#/components/parameters/tagsAllOf'
         - $ref: '#/components/parameters/licenceOneOf'
@@ -1086,6 +1112,7 @@ paths:
         - Video
       parameters:
         - $ref: '#/components/parameters/categoryOneOf'
+        - $ref: '#/components/parameters/isLive'
         - $ref: '#/components/parameters/tagsOneOf'
         - $ref: '#/components/parameters/tagsAllOf'
         - $ref: '#/components/parameters/licenceOneOf'
@@ -1226,6 +1253,8 @@ paths:
                 name:
                   description: Video name
                   type: string
+                  minLength: 3
+                  maxLength: 120
                 tags:
                   description: Video tags (maximum 5 tags each between 2 and 30 characters)
                   type: array
@@ -1397,6 +1426,8 @@ paths:
                 name:
                   description: Video name
                   type: string
+                  minLength: 3
+                  maxLength: 120
                 tags:
                   description: Video tags (maximum 5 tags each between 2 and 30 characters)
                   type: array
@@ -1523,6 +1554,8 @@ paths:
                 name:
                   description: Video name
                   type: string
+                  minLength: 3
+                  maxLength: 120
                 tags:
                   description: Video tags (maximum 5 tags each between 2 and 30 characters)
                   type: array
@@ -1627,6 +1660,8 @@ paths:
                 name:
                   description: Live video/replay name
                   type: string
+                  minLength: 3
+                  maxLength: 120
                 tags:
                   description: Live video/replay tags (maximum 5 tags each between 2 and 30 characters)
                   type: array
@@ -1816,10 +1851,10 @@ paths:
                 reason:
                   description: Reason why the user reports this video
                   type: string
-                  minLength: 4
+                  minLength: 2
+                  maxLength: 3000
                 predefinedReasons:
                   $ref: '#/components/schemas/PredefinedAbuseReasons'
-
                 video:
                   type: object
                   properties:
@@ -1875,6 +1910,8 @@ paths:
                 moderationComment:
                   type: string
                   description: Update the report comment visible only to the moderation team
+                  minLength: 2
+                  maxLength: 3000
       responses:
         '204':
           description: successful operation
@@ -1932,6 +1969,8 @@ paths:
                 message:
                   description: Message to send
                   type: string
+                  minLength: 2
+                  maxLength: 3000
               required:
                 - message
       responses:
@@ -2182,6 +2221,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/channelHandle'
         - $ref: '#/components/parameters/categoryOneOf'
+        - $ref: '#/components/parameters/isLive'
         - $ref: '#/components/parameters/tagsOneOf'
         - $ref: '#/components/parameters/tagsAllOf'
         - $ref: '#/components/parameters/licenceOneOf'
@@ -2369,7 +2409,7 @@ paths:
                       id:
                         type: integer
                       uuid:
-                        type: string
+                        $ref: '#/components/schemas/UUIDv4'
       requestBody:
         content:
           multipart/form-data:
@@ -2379,6 +2419,8 @@ paths:
                 displayName:
                   description: Video playlist display name
                   type: string
+                  minLength: 1
+                  maxLength: 120
                 thumbnailfile:
                   description: Video playlist thumbnail file
                   type: string
@@ -2432,6 +2474,8 @@ paths:
                 displayName:
                   description: Video playlist display name
                   type: string
+                  minLength: 1
+                  maxLength: 120
                 thumbnailfile:
                   description: Video playlist thumbnail file
                   type: string
@@ -2825,6 +2869,7 @@ paths:
           schema:
             type: string
         - $ref: '#/components/parameters/categoryOneOf'
+        - $ref: '#/components/parameters/isLive'
         - $ref: '#/components/parameters/tagsOneOf'
         - $ref: '#/components/parameters/tagsAllOf'
         - $ref: '#/components/parameters/licenceOneOf'
@@ -3147,13 +3192,6 @@ paths:
       tags:
         - Feeds
       summary: List comments on videos
-      servers:
-        - url: 'https://peertube2.cpy.re'
-          description: Live Test Server (live data - latest nightly version)
-        - url: 'https://peertube3.cpy.re'
-          description: Live Test Server (live data - latest RC version)
-        - url: 'https://peertube.cpy.re'
-          description: Live Test Server (live data - stable version)
       parameters:
         - name: format
           in: path
@@ -3206,18 +3244,33 @@ paths:
             application/xml:
               schema:
                 $ref: '#/components/schemas/VideoCommentsForXML'
+              examples:
+                nightly:
+                  externalValue: https://peertube2.cpy.re/feeds/video-comments.xml?filter=local
             application/rss+xml:
               schema:
                 $ref: '#/components/schemas/VideoCommentsForXML'
+              examples:
+                nightly:
+                  externalValue: https://peertube2.cpy.re/feeds/video-comments.rss?filter=local
             text/xml:
               schema:
                 $ref: '#/components/schemas/VideoCommentsForXML'
+              examples:
+                nightly:
+                  externalValue: https://peertube2.cpy.re/feeds/video-comments.xml?filter=local
             application/atom+xml:
               schema:
                 $ref: '#/components/schemas/VideoCommentsForXML'
+              examples:
+                nightly:
+                  externalValue: https://peertube2.cpy.re/feeds/video-comments.atom?filter=local
             application/json:
               schema:
                 type: object
+              examples:
+                nightly:
+                  externalValue: https://peertube2.cpy.re/feeds/video-comments.json?filter=local
         '400':
           x-summary: field inconsistencies
           description: >
@@ -3232,13 +3285,6 @@ paths:
       tags:
         - Feeds
       summary: List videos
-      servers:
-        - url: 'https://peertube2.cpy.re'
-          description: Live Test Server (live data - latest nightly version)
-        - url: 'https://peertube3.cpy.re'
-          description: Live Test Server (live data - latest RC version)
-        - url: 'https://peertube.cpy.re'
-          description: Live Test Server (live data - stable version)
       parameters:
         - name: format
           in: path
@@ -3295,6 +3341,82 @@ paths:
             application/rss+xml:
               schema:
                 $ref: '#/components/schemas/VideosForXML'
+              examples:
+                nightly:
+                  externalValue: https://peertube2.cpy.re/feeds/videos.rss?filter=local
+            text/xml:
+              schema:
+                $ref: '#/components/schemas/VideosForXML'
+              examples:
+                nightly:
+                  externalValue: https://peertube2.cpy.re/feeds/videos.xml?filter=local
+            application/atom+xml:
+              schema:
+                $ref: '#/components/schemas/VideosForXML'
+              examples:
+                nightly:
+                  externalValue: https://peertube2.cpy.re/feeds/videos.atom?filter=local
+            application/json:
+              schema:
+                type: object
+              examples:
+                nightly:
+                  externalValue: https://peertube2.cpy.re/feeds/videos.json?filter=local
+        '404':
+          description: video channel or account not found
+        '406':
+          description: accept header unsupported
+  '/feeds/subscriptions.{format}':
+    get:
+      tags:
+        - Feeds
+        - Account
+      summary: List videos of subscriptions tied to a token
+      parameters:
+        - name: format
+          in: path
+          required: true
+          description: 'format expected (we focus on making `rss` the most featureful ; it serves [Media RSS](https://www.rssboard.org/media-rss))'
+          schema:
+            type: string
+            enum:
+              - xml
+              - rss
+              - rss2
+              - atom
+              - atom1
+              - json
+              - json1
+        - name: accountId
+          in: query
+          description: limit listing to a specific account
+          schema:
+            type: string
+          required: true
+        - name: token
+          in: query
+          description: private token allowing access
+          schema:
+            type: string
+          required: true
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/nsfw'
+        - $ref: '#/components/parameters/filter'
+      responses:
+        '204':
+          description: successful operation
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                default: 'max-age=900' # 15 min cache
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/VideosForXML'
+            application/rss+xml:
+              schema:
+                $ref: '#/components/schemas/VideosForXML'
             text/xml:
               schema:
                 $ref: '#/components/schemas/VideosForXML'
@@ -3304,8 +3426,6 @@ paths:
             application/json:
               schema:
                 type: object
-        '404':
-          description: video channel or account not found
         '406':
           description: accept header unsupported
   /plugins:
@@ -3732,9 +3852,7 @@ components:
           - type: integer
             minimum: 0
             example: 42
-          - type: string
-            format: uuid
-            example: 9c9de5e8-0a1e-484a-b099-e80766180a6d
+          - $ref: '#/components/schemas/UUIDv4'
     playlistElementId:
       name: playlistElementId
       in: path
@@ -3793,6 +3911,13 @@ components:
       description: The comment id
       schema:
         type: integer
+    isLive:
+      name: isLive
+      in: query
+      required: false
+      description: whether or not the video is a live
+      schema:
+        type: boolean
     categoryOneOf:
       name: categoryOneOf
       in: query
@@ -3933,19 +4058,16 @@ components:
           - video-live-ending
   securitySchemes:
     OAuth2:
-      description: >
-        In the header: *Authorization: Bearer <token\>*
-
-
+      description: |
         Authenticating via OAuth requires the following steps:
-
-
-        - Have an account with sufficient authorization levels
-
+        - Have an activated account
         - [Generate](https://docs.joinpeertube.org/api-rest-getting-started) a
-        Bearer Token
+        Bearer Token for that account at `/api/v1/users/token`
+        - Make authenticated requests, putting *Authorization: Bearer <token\>*
+        - Profit, depending on the role assigned to the account
 
-        - Make Authenticated Requests
+        Note that the __access token is valid for 1 day__ and, and is given
+        along with a __refresh token valid for 2 weeks__.
       type: oauth2
       flows:
         password:
@@ -3955,16 +4077,35 @@ components:
             moderator: Moderator scope
             user: User scope
   schemas:
-    VideoConstantNumber:
+    UUIDv4:
+      type: string
+      format: uuid
+      example: 9c9de5e8-0a1e-484a-b099-e80766180a6d
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      # the regex above limits the length;
+      # however, some tools might require explicit settings:
+      minLength: 36
+      maxLength: 36
+
+    VideoConstantNumber-Category:
       properties:
         id:
           type: integer
+          description: category id of the video (see [/videos/categories](#tag/Video/paths/~1videos~1categories/get))
         label:
           type: string
-    VideoConstantString:
+    VideoConstantNumber-Licence:
+      properties:
+        id:
+          type: integer
+          description: licence id of the video (see [/videos/licences](#tag/Video/paths/~1videos~1licences/get))
+        label:
+          type: string
+    VideoConstantString-Language:
       properties:
         id:
           type: string
+          description: language id of the video (see [/videos/languages](#tag/Video/paths/~1videos~1languages/get))
         label:
           type: string
 
@@ -4171,14 +4312,21 @@ components:
           type: string
           format: url
     VideoStreamingPlaylists:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+            type:
+              type: integer
+              enum:
+                - 1
+              description: |
+                Playlist type:
+                - `1`: HLS
+        - $ref: '#/components/schemas/VideoStreamingPlaylists-HLS'
+    VideoStreamingPlaylists-HLS:
       properties:
-        id:
-          type: integer
-        type:
-          type: integer
-          enum:
-            - 1
-          description: 'Playlist type (HLS = `1`)'
         playlistUrl:
           type: string
           format: url
@@ -4187,7 +4335,10 @@ components:
           format: url
         files:
           type: array
-          description: 'Video files associated to this playlist. The difference with the root "files" property is that these files are fragmented, so they can be used in this streaming playlist (HLS etc)'
+          description: |
+            Video files associated to this playlist.
+
+            The difference with the root `files` property is that these files are fragmented, so they can be used in this streaming playlist (HLS, etc.)
           items:
             $ref: '#/components/schemas/VideoFile'
         redundancies:
@@ -4203,52 +4354,69 @@ components:
         id:
           type: integer
         uuid:
-          type: string
-          format: uuid
-          example: 9c9de5e8-0a1e-484a-b099-e80766180a6d
+          $ref: '#/components/schemas/UUIDv4'
         name:
           type: string
+          minLength: 3
+          maxLength: 120
     Video:
       properties:
         id:
           type: integer
           example: 8
         uuid:
-          type: string
-          format: uuid
-          example: 9c9de5e8-0a1e-484a-b099-e80766180a6d
+          $ref: '#/components/schemas/UUIDv4'
         isLive:
           type: boolean
         createdAt:
           type: string
           format: date-time
+          example: 2017-10-01T10:52:46.396Z
+          description: time at which the video object was first drafted
         publishedAt:
           type: string
           format: date-time
+          example: 2018-10-01T10:52:46.396Z
+          description: time at which the video was marked as ready for playback (with restrictions depending on `privacy`). Usually set after a `state` evolution.
         updatedAt:
           type: string
           format: date-time
+          example: 2021-05-04T08:01:01.502Z
+          description: last time the video's metadata was modified
         originallyPublishedAt:
           type: string
           format: date-time
+          example: 2010-10-01T10:52:46.396Z
+          description: used to represent a date of first publication, prior to the practical publication date of `publishedAt`
         category:
-          $ref: '#/components/schemas/VideoConstantNumber'
+          $ref: '#/components/schemas/VideoConstantNumber-Category'
         licence:
-          $ref: '#/components/schemas/VideoConstantNumber'
+          $ref: '#/components/schemas/VideoConstantNumber-Licence'
         language:
-          $ref: '#/components/schemas/VideoConstantString'
+          $ref: '#/components/schemas/VideoConstantString-Language'
         privacy:
           $ref: '#/components/schemas/VideoPrivacyConstant'
         description:
           type: string
+          example: |
+            **[Want to help to translate this video?](https://weblate.framasoft.org/projects/what-is-peertube-video/)**\r\n\r\n
+            **Take back the control of your videos! [#JoinPeertube](https://joinpeertube.org)**\r\n*A decentralized video hosting network, based on fr...
+          minLength: 3
+          maxLength: 250
+          description: |
+            truncated description of the video, written in Markdown.
+            Resolve `descriptionPath` to get the full description of maximum `10000` characters.
         duration:
           type: integer
           example: 1419
+          description: duration of the video in seconds
         isLocal:
           type: boolean
         name:
           type: string
           example: What is PeerTube?
+          minLength: 3
+          maxLength: 120
         thumbnailPath:
           type: string
           example: /static/thumbnails/a65bc12f-9383-462e-81ae-8207e8b434ee.jpg
@@ -4301,24 +4469,27 @@ components:
           properties:
             descriptionPath:
               type: string
+              example: /api/v1/videos/9c9de5e8-0a1e-484a-b099-e80766180a6d/description
+              description: path at which to get the full description of maximum `10000` characters
             support:
               type: string
               description: A text tell the audience how to support the video creator
               example: Please support my work on <insert crowdfunding plateform>! <3
+              minLength: 3
+              maxLength: 1000
             channel:
               $ref: '#/components/schemas/VideoChannel'
             account:
               $ref: '#/components/schemas/Account'
             tags:
+              example: [flowers, gardening]
               type: array
+              minItems: 1
+              maxItems: 5
               items:
                 type: string
-              example: [flowers, gardening]
-            files:
-              type: array
-              description: 'WebTorrent/raw video files. Can be empty if WebTorrent is disabled on the server. In this case, video files will be in the "streamingPlaylists[].files" property'
-              items:
-                $ref: '#/components/schemas/VideoFile'
+                minLength: 2
+                maxLength: 30
             commentsEnabled:
               type: boolean
             downloadEnabled:
@@ -4328,10 +4499,24 @@ components:
               items:
                 type: string
                 format: url
+            files:
+              type: array
+              items:
+                $ref: '#/components/schemas/VideoFile'
+              description: |
+                WebTorrent/raw video files. If WebTorrent is disabled on the server:
+
+                - field will be empty
+                - video files will be found in `streamingPlaylists[].files` field
             streamingPlaylists:
               type: array
               items:
                 $ref: '#/components/schemas/VideoStreamingPlaylists'
+              description: |
+                HLS playlists/manifest files. If HLS is disabled on the server:
+
+                - field will be empty
+                - video files will be found in `files` field
     FileRedundancyInformation:
       properties:
         id:
@@ -4367,9 +4552,7 @@ components:
           type: string
           format: url
         uuid:
-          type: string
-          format: uuid
-          example: 9c9de5e8-0a1e-484a-b099-e80766180a6d
+          $ref: '#/components/schemas/UUIDv4'
         redundancies:
           type: object
           properties:
@@ -4428,6 +4611,8 @@ components:
         reason:
           type: string
           example: The video is a spam
+          minLength: 2
+          maxLength: 3000
         predefinedReasons:
           $ref: '#/components/schemas/AbusePredefinedReasons'
         reporterAccount:
@@ -4437,17 +4622,10 @@ components:
         moderationComment:
           type: string
           example: Decided to ban the server since it spams us regularly
+          minLength: 2
+          maxLength: 3000
         video:
-          type: object
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
-            uuid:
-              type: string
-              format: uuid
-              example: 9c9de5e8-0a1e-484a-b099-e80766180a6d
+          $ref: '#/components/schemas/VideoInfo'
         createdAt:
           type: string
           format: date-time
@@ -4457,6 +4635,8 @@ components:
           type: integer
         message:
           type: string
+          minLength: 2
+          maxLength: 3000 
         byModerator:
           type: boolean
         createdAt:
@@ -4478,12 +4658,14 @@ components:
           format: date-time
         name:
           type: string
+          minLength: 3
+          maxLength: 120
         uuid:
-          type: string
-          format: uuid
-          example: 9c9de5e8-0a1e-484a-b099-e80766180a6d
+          $ref: '#/components/schemas/UUIDv4'
         description:
           type: string
+          minLength: 3
+          maxLength: 10000
         duration:
           type: integer
         views:
@@ -4498,8 +4680,12 @@ components:
       properties:
         displayName:
           type: string
+          minLength: 1
+          maxLength: 120
         description:
           type: string
+          minLength: 3
+          maxLength: 1000
         isLocal:
           type: boolean
         ownerAccount:
@@ -4508,9 +4694,7 @@ components:
             id:
               type: integer
             uuid:
-              type: string
-              format: uuid
-              example: 9c9de5e8-0a1e-484a-b099-e80766180a6d
+              $ref: '#/components/schemas/UUIDv4'
     VideoPlaylist:
       properties:
         id:
@@ -4523,12 +4707,14 @@ components:
           format: date-time
         description:
           type: string
+          minLength: 3
+          maxLength: 1000
         uuid:
-          type: string
-          format: uuid
-          example: 9c9de5e8-0a1e-484a-b099-e80766180a6d
+          $ref: '#/components/schemas/UUIDv4'
         displayName:
           type: string
+          minLength: 1
+          maxLength: 120
         isLocal:
           type: boolean
         videoLength:
@@ -4552,6 +4738,8 @@ components:
           format: url
         text:
           type: string
+          minLength: 1
+          maxLength: 10000
         threadId:
           type: integer
         inReplyToCommentId:
@@ -4581,7 +4769,7 @@ components:
     VideoCaption:
       properties:
         language:
-          $ref: '#/components/schemas/VideoConstantString'
+          $ref: '#/components/schemas/VideoConstantString-Language'
         captionPath:
           type: string
     ActorImage:
@@ -5119,9 +5307,7 @@ components:
               type: integer
               example: 8
             uuid:
-              type: string
-              format: uuid
-              example: 9c9de5e8-0a1e-484a-b099-e80766180a6d
+              $ref: '#/components/schemas/UUIDv4'
     CommentThreadResponse:
       properties:
         total:
@@ -5370,34 +5556,41 @@ components:
         - username
         - password
         - email
-    VideoChannelCreate:
+
+    VideoChannelCommon:
       properties:
-        name:
-          type: string
         displayName:
           type: string
+          minLength: 1
+          maxLength: 120
         description:
           type: string
+          minLength: 3
+          maxLength: 1000
         support:
           type: string
           description: 'A text shown by default on all videos of this channel, to tell the audience how to support it'
           example: Please support my work on <insert crowdfunding plateform>! <3
+          minLength: 3
+          maxLength: 1000
+    VideoChannelCreate:
+      allOf:
+        - $ref: '#/components/schemas/VideoChannelCommon'
+        - properties:
+            name:
+              type: string
+              minLength: 1
+              maxLength: 120
       required:
         - name
         - displayName
     VideoChannelUpdate:
-      properties:
-        displayName:
-          type: string
-        description:
-          type: string
-        support:
-          type: string
-          description: 'A text shown by default on all videos of this channel, to tell the audience how to support it'
-          example: Please support my work on <insert crowdfunding plateform>! <3
-        bulkVideosSupportUpdate:
-          type: boolean
-          description: 'Update the support field for all videos of this channel'
+      allOf:
+        - $ref: '#/components/schemas/VideoChannelCommon'
+        - properties:
+            bulkVideosSupportUpdate:
+              type: boolean
+              description: 'Update the support field for all videos of this channel'
 
     MRSSPeerLink:
       type: object

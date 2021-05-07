@@ -1,11 +1,16 @@
 @import '_variables';
 @import '_mixins';
 
+/* stylelint-disable */
 @import '~primeng/resources/primeng.css';
 
 // Override primeng style we don't want
-input[type="button"] {
+input[type=button] {
   border-radius: inherit;
+}
+
+p-table .p-datatable-header .caption {
+  margin-bottom: 15px;
 }
 
 // Taken from old nova light theme
@@ -510,10 +515,6 @@ p-table {
 
       .left-buttons {
         padding-left: 15px;
-      }
-
-      .input-group-text {
-        background-color: transparent;
       }
     }
   }

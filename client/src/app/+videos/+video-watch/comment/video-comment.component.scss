@@ -24,6 +24,10 @@
   }
 }
 
+my-actor-avatar {
+  @include actor-avatar-size(36px);
+}
+
 .comment {
   flex-grow: 1;
   // Fix word-wrap with flex
@@ -58,7 +62,7 @@
   display: inline-flex;
   padding-right: 6px;
   padding-left: 6px;
-  color: white !important;
+  color: #fff !important;
 }
 
 .comment-account {
@@ -129,7 +133,10 @@
     cursor: pointer;
     margin-right: 10px;
 
-    &:hover, &:active, &:focus, &:focus-visible {
+    &:hover,
+    &:active,
+    &:focus,
+    &:focus-visible {
       color: pvar(--mainForegroundColor);
     }
   }
@@ -148,10 +155,10 @@ my-video-comment-add {
   }
 }
 
-.children {
+.is-child {
   // Reduce avatars size for replies
-  .comment-avatar {
-    @include avatar(25px);
+  my-actor-avatar {
+    @include actor-avatar-size(25px);
   }
 
   .left {

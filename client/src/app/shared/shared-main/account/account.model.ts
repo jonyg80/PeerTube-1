@@ -14,7 +14,7 @@ export class Account extends Actor implements ServerAccount {
   userId?: number
 
   static GET_ACTOR_AVATAR_URL (actor: { avatar?: { url?: string, path: string } }) {
-    return Actor.GET_ACTOR_AVATAR_URL(actor) || this.GET_DEFAULT_AVATAR_URL()
+    return Actor.GET_ACTOR_AVATAR_URL(actor)
   }
 
   static GET_DEFAULT_AVATAR_URL () {
@@ -23,8 +23,6 @@ export class Account extends Actor implements ServerAccount {
 
   constructor (hash: ServerAccount) {
     super(hash)
-
-    this.updateComputedAttributes()
 
     this.displayName = hash.displayName
     this.description = hash.description
@@ -40,16 +38,9 @@ export class Account extends Actor implements ServerAccount {
 
   updateAvatar (newAvatar: ActorImage) {
     this.avatar = newAvatar
-
-    this.updateComputedAttributes()
   }
 
   resetAvatar () {
     this.avatar = null
-    this.avatarUrl = Account.GET_DEFAULT_AVATAR_URL()
-  }
-
-  private updateComputedAttributes () {
-    this.avatarUrl = Account.GET_ACTOR_AVATAR_URL(this)
   }
 }

@@ -12,6 +12,7 @@ import {
 } from '@angular/core'
 import { AuthService, ScreenService, ServerService, User } from '@app/core'
 import { ServerConfig, VideoPlaylistType, VideoPrivacy, VideoState } from '@shared/models'
+import { ActorAvatarSize } from '../shared-actor-image/actor-avatar.component'
 import { Video } from '../shared-main'
 import { VideoPlaylistService } from '../shared-video-playlist'
 import { VideoActionsDisplayType } from './video-actions-dropdown.component'
@@ -50,6 +51,8 @@ export class VideoMiniatureComponent implements OnInit {
     blacklistInfo: false
   }
   @Input() displayVideoActions = true
+
+  @Input() actorImageSize: ActorAvatarSize = '40'
 
   @Input() displayAsRow = false
 
@@ -178,14 +181,6 @@ export class VideoMiniatureComponent implements OnInit {
     }
 
     return ''
-  }
-
-  getAvatarUrl () {
-    if (this.displayOwnerAccount()) {
-      return this.video.account.avatar?.url
-    }
-
-    return this.video.videoChannelAvatarUrl
   }
 
   loadActions () {

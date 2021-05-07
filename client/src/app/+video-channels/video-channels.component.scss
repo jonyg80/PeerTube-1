@@ -107,8 +107,8 @@
     display: flex;
     margin-bottom: 15px;
 
-    img {
-      @include avatar(48px);
+    .account-avatar {
+      @include actor-avatar-size(48px);
     }
 
     .actor-info {
@@ -131,10 +131,10 @@
   }
 
   .owner-description {
+    @include fade-text(120px, pvar(--mainBackgroundColor));
+
     max-height: 140px;
     word-break: break-word;
-
-    @include fade-text(120px, pvar(--mainBackgroundColor));
   }
 }
 
@@ -150,7 +150,7 @@
 }
 
 .copy-button {
-  border: none;
+  border: 0;
 }
 
 @media screen and (max-width: 1400px) {
@@ -178,9 +178,9 @@
   }
 
   .channel-description:not(.expanded) {
-    max-height: 70px;
-
     @include fade-text(30px, pvar(--channelBackgroundColor));
+
+    max-height: 70px;
   }
 
   .show-more {
@@ -220,10 +220,10 @@
     }
 
     .owner-description {
+      @include fade-text(30px, pvar(--mainBackgroundColor));
+
       grid-column: 2;
       max-height: 70px;
-
-      @include fade-text(30px, pvar(--mainBackgroundColor));
     }
 
     .view-account {
@@ -289,8 +289,8 @@
         margin-top: -5px;
       }
 
-      img {
-        @include channel-avatar(64px);
+      .account-avatar {
+        @include actor-avatar-size(64px);
 
         margin: -30px 0 0 15px;
       }

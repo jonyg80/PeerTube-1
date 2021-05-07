@@ -3,9 +3,8 @@
 
 @mixin miniature-name {
   @include ellipsis-multiline(1.1em, 2);
+  @include peertube-word-wrap(false);
 
-  word-break: break-all;
-  word-wrap: break-word;
   transition: color 0.2s;
   font-weight: $font-semibold;
   color: pvar(--mainForegroundColor);
@@ -21,11 +20,11 @@
 }
 
 @mixin miniature-thumbnail {
-  @include disable-outline;
-
   $play-overlay-transition: 0.2s ease;
   $play-overlay-height: 26px;
   $play-overlay-width: 18px;
+
+  @include disable-outline;
 
   display: flex;
   flex-direction: column;
@@ -47,7 +46,8 @@
     opacity: 0;
     background-color: rgba(0, 0, 0, 0.3);
 
-    &, .icon {
+    &,
+    .icon {
       transition: all $play-overlay-transition;
     }
 
@@ -79,7 +79,7 @@
 
     &.blur-filter {
       filter: blur(20px);
-      transform : scale(1.03);
+      transform: scale(1.03);
     }
   }
 }
@@ -129,10 +129,7 @@
       column-gap: 30px;
       grid-template-columns: repeat(
         auto-fill,
-        minmax(
-          var(--miniatureMinWidth),
-          1fr
-        )
+        minmax(var(--miniatureMinWidth), 1fr)
       );
 
       .video-wrapper,
